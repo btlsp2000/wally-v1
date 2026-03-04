@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WALLY V1.0.10 | COMMERCIAL STABLE</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <style>
+        :root { --bg: #222; --cad-bg: #121212; --cmd-bg: #333; --accent: #61afef; --text: #eee; --dim: #888; --sel: #98c379; --print: #e5c07b; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+        
+        #toolbar { height: 40px; background: #2c2c2c; border-bottom: 1px solid #444; display: flex; align-items: center; padding: 0 10px; gap: 5px; flex-shrink: 0; z-index: 1000; position: relative; }
+        .menu-btn { cursor: pointer; color: var(--accent); font-size: 20px; font-weight: bold; padding: 0 5px; z-index: 9999; }
+        .menu-btn:hover { color: white; }
+
+        #workspace { flex-grow: 1; display: flex; position: relative; overflow: hidden; }
+        #sidebar { width: 260px; background: #252526; border-right: 1px solid #444; display: flex; flex-direction: column; z-index: 2; overflow-y: auto; }
+        #canvas-area { flex-grow: 1; position: relative; background: var(--cad-bg); cursor: crosshair; }
+        #cmd-bar { height: 30px; background: var(--cmd-bg); border-top: 1px solid #555; display: flex; align-items: center; padding: 0 5px; font-size: 12px; flex-shrink: 0; }
+        
+        button { background: #444; border: 1px solid #555; color: #ddd; padding: 4px 8px; font-family: inherit; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #555; border-color: var(--accent); }
+        button.active { background: var(--accent); color: #111; border-color: var(--accent); }
+        
+        .panel { padding: 10px; border-bottom: 1px solid #333; }
+        .panel-title { font-size: 11px; font-weight: bold; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        input, select, textarea { background: #111; border: 1px solid #444; color: var(--accent); padding: 4px; font-family: inherit; font-size: 11px; width: 100%; box-sizing: border-box; }
+        input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+        .control-row { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
+        .label-sm { font-size: 10px; color: #888; width: 45px; flex-shrink: 0; cursor: help; }
+        
+        #cmd-prompt { color: var(--dim); margin-right: 5px; font-weight: bold; }
+        #cmd-input { border: none; background: transparent; color: white; font-size: 12px; flex-grow: 1; outline: none; }
+        
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 4px; font-size: 11px; cursor: pointer; border-bottom: 1px solid #333; }
+        .list-row:hover { background: #333; }
+        .list-row.selected { border-left: 3px solid var(--sel); background: #2a2a2a; }
+        .layer-vis { width: 10px; height: 10px; border: 1px solid #666; margin-right: 5px; }
+        .layer-vis.on { background: var(--accent); border-color: var(--accent); }
+
+        #library { position: absolute; top: 40px; left: 10px; width: 220px; background: #252526; border: 1px solid #555; display: none; z-index: 9999; padding: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        .lib-item { padding: 8px 5px; border-bottom: 1px solid #333; cursor: pointer; font-size: 11px; color: #ccc; }
+        .lib-item:hover { color: var(--accent); background: #333; }
+        
+        body.hal-mode #sidebar, body.hal-mode #toolbar, body.hal-mode #cmd-bar { display: none; }
+        body.hal-mode #canvas-area { width: 100vw; height: 100vh; background: black; }
+        #hal-exit { display: none; position: absolute; top: 20px; right: 20px; z-index: 100; background: red; color: white; border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; cursor: pointer; font-weight: bold; opacity: 0.5; }
+        body.hal-mode #hal-exit { display: block; }
+
+        .overlay-bg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
+        .overlay-content { background: #1e1e1e; width: 85%; max-width: 800px; height: 85%; overflow-y: auto; padding: 40px; border: 1px solid var(--accent); position: relative; display: flex; flex-direction: column; }
+        #manual-content h1, #manual-content h2 { color: var(--accent); margin-top: 20px; font-family: 'Segoe UI', sans-serif; }
+        #manual-content h1 { border-bottom: 1px solid #333; padding-bottom: 10px; }
+        #manual-content h2 { font-size: 16px; margin-top: 30px; }
+        #manual-content p, #manual-content li { color: #ccc; font-family: sans-serif; font-size: 13px; line-height: 1.6; margin-bottom: 8px; }
+        #manual-content code { background: #333; color: var(--print); padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .close-btn { position: absolute; top: 15px; right: 20px; background: transparent; border: none; color: #aaa; font-size: 28px; cursor: pointer; transition: 0.2s; }
+        .close-btn:hover { color: white; }
+
+        /* V1.0.10: NICE TITLES CSS */
+        #nice-title {
+            position: fixed;
+            background: #1e1e1e;
+            color: var(--accent);
+            border: 1px solid #444;
+            padding: 5px 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <div class="menu-btn" onclick="toggleLibrary()">☰</div>
+        <span style="font-weight:bold; color:var(--accent); margin-right:10px;" title="LKA CAD Engine">WALLY v1.0.10</span>
+        <button onclick="fileNew()" title="Clear canvas and start fresh">NEW</button>
+        <button onclick="fileSave()" title="Save current workspace to local JSON file">SAVE</button>
+        <button onclick="fileLoad()" title="Load a saved JSON workspace">LOAD</button>
+        <span style="width:1px; height:20px; background:#444; margin:0 5px;"></span>
+        <button onclick="exec('WALL')" title="Spawn a thickened polyline">WALL</button>
+        <button onclick="exec('CIRCLE')" style="color:#56b6c2;" title="Spawn a native circle">CIRCLE</button>
+        <button onclick="exec('STAIR')" style="color:#d19a66;" title="Spawn a parametric stair array">STAIR</button>
+        <button onclick="exec('DIM')" style="color:var(--print);" title="Spawn a measurement dimension">DIM</button>
+        <button onclick="exec('TEXT')" style="color:#c678dd;" title="Spawn an annotation label">TEXT</button>
+        <span style="width:1px; height:20px; background:#444; margin:0 5px;"></span>
+        <button onclick="exportDXF()" style="color:var(--sel);" title="Export layers to DXF for CNC/Laser">DXF</button>
+        <button onclick="exec('HAL')" title="Toggle presentation mode">HAL VIEW</button>
+        <span style="flex-grow:1;"></span>
+        <button onclick="exec('HELP')" style="border-color:var(--accent); color:var(--accent);" title="Open Operations Manual">MANUAL</button>
+    </div>
+
+    <div id="library">
+        <div style="font-weight:bold; margin-bottom:5px; color:var(--accent);">PRESETS</div>
+        <div class="lib-item" onclick="exec('BOOKMARK')" title="Load default LKA bookmark design">Coff Bookmark Template</div>
+    </div>
+
+    <div id="workspace">
+        <div id="sidebar">
+            <div class="panel" style="border-left: 3px solid var(--print);">
+                <div class="panel-title" style="color:var(--print);">PLOT SETTINGS</div>
+                <div class="control-row">
+                    <span class="label-sm">Paper</span>
+                    <select id="paperSize" style="flex:1;" title="Select output paper size"><option value="LETTER">Letter</option><option value="TABLOID">Tabloid</option><option value="A4">A4</option><option value="A3">A3</option></select>
+                    <select id="paperOrient" style="width:40px;" title="Portrait or Landscape"><option value="L">L</option><option value="P">P</option></select>
+                </div>
+                <div class="control-row"><span class="label-sm">Units</span><select id="unitMap" title="Base world units"><option value="IN">Inches</option><option value="FT">Feet</option><option value="MM">Millimeters</option></select></div>
+                <div class="control-row"><span class="label-sm">Scale</span><input type="text" id="printScale" value="1/4&quot; = 1'-0&quot;" style="flex:1;" title="Architectural or decimal scale ratio"></div>
+                <div class="control-row"><button onclick="autoFitScale()" title="Automatically calculate best fit scale">AUTO FIT</button><button onclick="exportPDF()" style="background:var(--print); color:#111; font-weight:bold;" title="Generate true-scale physical blueprint">PDF PLOT</button></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">PROPERTIES</div>
+                <div class="control-row"><span class="label-sm">Type</span><select id="prop-type" onchange="updateProp()"><option value="WALL">Wall</option><option value="LINE">Line</option><option value="CIRCLE">Circle</option><option value="DIM">Dim</option><option value="TEXT">Text</option><option value="STAIR">Stair</option></select></div>
+                <div class="control-row"><span class="label-sm">Layer</span><select id="prop-layer" onchange="updateProp()"></select></div>
+                <div class="control-row"><span class="label-sm" title="Wall Thk / Radius / Dim Offset">Width/R</span><input id="prop-thick" type="number" step="0.1" oninput="updateProp()"></div>
+                <div class="control-row"><span class="label-sm" title="Tube Thk / Stair Depth / End Thk">Depth/T</span><input id="prop-thickEnd" type="number" step="0.1" oninput="updateProp()"></div>
+                <div class="control-row"><span class="label-sm" title="Annotation string or Total Treads">N / Text</span><input id="prop-textStr" type="text" oninput="updateProp()" placeholder="Label or N..."></div>
+                <div style="font-size:10px; color:#888; margin-top:5px;" title="Cartesian Path Matrix">Coordinates (X,Y):</div>
+                <textarea id="prop-geo" style="height:50px;" oninput="updateProp()"></textarea>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">LAYERS</div>
+                <div id="layer-list"></div>
+                <button onclick="addLayer()" style="width:100%; margin-top:5px;" title="Create a new drafting layer">+ NEW LAYER</button>
+            </div>
+            
+            <div class="panel" style="flex-grow:1; display:flex; flex-direction:column; min-height:150px;">
+                <div class="panel-title">ENTITIES</div>
+                <div id="ent-list" style="overflow-y:auto; flex-grow:1;"></div>
+            </div>
+        </div>
+
+        <div id="canvas-area">
+            <canvas id="canvas"></canvas>
+            <div id="hal-exit" onclick="exec('HAL')">X</div>
+        </div>
+    </div>
+
+    <div id="cmd-bar">
+        <span id="cmd-prompt">COMMAND:</span>
+        <input id="cmd-input" type="text" autocomplete="off" placeholder="Type command (LINE, WALL, CIRCLE, STAIR, DIM, BOOKMARK, SCRIPT)...">
+        <span id="cmd-history" style="color:#666; margin-left:10px;"></span>
+    </div>
+
+    <input type="file" id="file-input" style="display:none" onchange="handleFile(this)">
+
+    <div id="script-overlay" class="overlay-bg">
+        <div class="overlay-content" style="max-height: 60vh;">
+            <button class="close-btn" onclick="document.getElementById('script-overlay').style.display='none'">×</button>
+            <div style="color:var(--accent); font-weight:bold; font-size:14px; margin-bottom: 10px;">LKA MACRO INTERPRETER | PASTE .DAT FILE</div>
+            <textarea id="script-text" style="flex-grow:1; background:#111; color:#ccc; border:1px solid #444; font-family:monospace; font-size:12px; padding:10px; margin-bottom:15px;"></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="document.getElementById('script-overlay').style.display='none'">CANCEL</button>
+                <button onclick="runScript()" style="background:var(--accent); color:#111; font-weight:bold; padding: 8px 16px;">EXECUTE SCRIPT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="manual-overlay" class="overlay-bg">
+        <div id="manual-content" class="overlay-content">
+            <button class="close-btn" onclick="exec('HELP')">×</button>
+            <h1>WALLY V1.0.10 | OPERATIONS MANUAL</h1>
+            <p style="color:#888; font-size:11px; margin-top:-10px;">ENTERPRISE: LKA / Last Known Address<br>SYSTEM: JavaScript Vector Engine & jsPDF Plotter</p>
+            
+            <p style="color:var(--sel); font-weight:bold; margin-top:20px;">Welcome to Wally.</p>
+            <p>You have bypassed the bloated, subscription-trapped CAD industry. This is a pure, frictionless 2D drafting engine driven by Cartesian math. Buy it once. Own it forever. Run it completely offline.</p>
+
+            <h2>1. THE CORE WORKFLOW (SPAWN & MODIFY)</h2>
+            <p>Wally does not use "click-and-drag" drawing. It uses a precision spawn-and-modify sequence. To create custom geometry, follow this flow:</p>
+            <ol style="color:#ccc; font-family:sans-serif; font-size:13px; line-height:1.6;">
+                <li><strong>TYPE:</strong> Select your entity type from the top toolbar or CLI (e.g., <code>WALL</code>). This spawns a default shape onto the canvas and opens its data.</li>
+                <li><strong>PROPERTIES:</strong> Change the thickness (T), radius, or text in the left panel. The shape will scale in real-time.</li>
+                <li><strong>COORD'S:</strong> Click into the Coordinates (X,Y) box and type or paste your exact cartesian matrix. The canvas will instantly update.</li>
+            </ol>
+
+            <h2>2. CANVAS NAVIGATION</h2>
+            <ul>
+                <li><strong>PAN (Move Camera):</strong> Click and drag the Right Mouse Button. (Alternatively, hold the <code>ALT</code> key + Left-Click, or use the Middle-Click wheel).</li>
+                <li><strong>ZOOM:</strong> Scroll the mouse wheel up or down.</li>
+                <li><strong>SELECT:</strong> Left-Click any entity to open its data in the Properties panel.</li>
+            </ul>
+
+            <h2>3. THE COMMAND LINE (CLI)</h2>
+            <p>Wally is driven primarily by the Command Line at the bottom of the screen.</p>
+            <ul>
+                <li><code>LINE</code> : Spawns a standard 0-thickness geometric path.</li>
+                <li><code>WALL</code> : Spawns a thickened polyline structure.</li>
+                <li><code>CIRCLE</code> : Spawns a native circle. Width = Radius. Depth = Tube Wall.</li>
+                <li><code>DIM</code> : Spawns a dimension measurement tool.</li>
+                <li><code>TEXT</code> : Spawns a text annotation label.</li>
+                <li><code>STAIR</code> : Spawns a parametric stair tread array.</li>
+                <li><code>X,Y</code> : Type a coordinate (e.g., <code>15,25</code>) to append a point to the active path.</li>
+                <li><code>ERASE</code> : Deletes the currently selected entity (or press <code>DEL</code>).</li>
+                <li><code>ZOOM E</code> : Zoom Extents. Automatically scales to fit your geometry.</li>
+                <li><code>DXF</code> : Compiles visible layers into a 2D AutoCAD file for CNC/Laser.</li>
+                <li><code>HAL</code> : Toggles the high-contrast presentation view.</li>
+                <li><code>SCRIPT</code> : Opens the Macro Interpreter to batch-generate geometry from a .dat file.</li>
+            </ul>
+        </div>
+    </div>
+
+<script>
+// ==========================================
+// V1.0.10: NICE TITLES ENGINE
+// ==========================================
+function initNiceTitles() {
+    const tooltip = document.createElement('div');
+    tooltip.id = 'nice-title';
+    document.body.appendChild(tooltip);
+
+    document.querySelectorAll('[title]').forEach(el => {
+        const text = el.getAttribute('title');
+        el.removeAttribute('title'); // Strip default browser tooltip
+        el.setAttribute('data-nice-title', text);
+
+        el.addEventListener('mouseenter', e => {
+            tooltip.innerText = text;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 20) + 'px';
+        });
+        
+        el.addEventListener('mousemove', e => {
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 20) + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+        });
+    });
+}
+
+// ==========================================
+// CORE STATE & MATH
+// ==========================================
+let state = {
+    ents: [],
+    layers: { '0': { color: '#ffffff', visible: true }, 'WALLS': { color: '#61afef', visible: true }, 'DIMS': { color: '#e5c07b', visible: true }, 'STAIRS': { color: '#d19a66', visible: true } },
+    currentLayer: '0', selection: null, view: { x: 0, y: 0, scale: 5, panStart: null }, mouse: { x: 0, y: 0, worldX: 0, worldY: 0 }, osnap: null
+};
+
+class M { 
+    constructor(x,y){this.x=x;this.y=y} 
+    add(v){return new M(this.x+v.x,this.y+v.y)} 
+    sub(v){return new M(this.x-v.x,this.y-v.y)} 
+    mul(s){return new M(this.x*s,this.y*s)} 
+    div(s){return new M(this.x/s,this.y/s)} 
+    cross(v){return (this.x*v.y)-(this.y*v.x)} 
+    dot(v){return (this.x*v.x)+(this.y*v.y)} 
+    mag(){return Math.sqrt(this.x**2+this.y**2)} 
+    norm(){const m=this.mag();return m===0?new M(0,0):this.div(m)} 
+    perp(){return new M(-this.y,this.x)} 
+}
+
+function VIA(P1,v1,P2,v2,th){ 
+    const det=v1.cross(v2); 
+    if(Math.abs(det)<1e-9)return null; 
+    const t=(P2.sub(P1).x*v2.y - P2.sub(P1).y*v2.x)/det; 
+    const I=P1.add(v1.mul(t)); 
+    const mv=v1.mul(-1).add(v2).norm(); 
+    const d = v1.mul(-1).dot(mv);
+    const sq = Math.max(0, 1 - d*d); 
+    const sm = sq === 0 ? 0 : (th/2)/Math.sqrt(sq); 
+    return {I, In:I.add(mv.mul(sm)), Out:I.sub(mv.mul(sm)), Turn:det>0?'L':'R'}; 
+}
+
+function parseCoords(txt) { const pts=[]; txt.replace(/[\t\n\r,]+/g,' ').replace(/\s+/g,' ').trim().split(' ').forEach((v,i,a)=>{ if(i%2===0 && a[i+1]){ let x=parseFloat(v), y=parseFloat(a[i+1]); if(!isNaN(x)&&!isNaN(y)) pts.push(new M(x,y)); } }); return pts; }
+
+function ComputeGeometry(txt, th) {
+    const ptsM = parseCoords(txt); if(ptsM.length<2) return null;
+    const N=ptsM.length; const j=[]; const cl=ptsM[0].sub(ptsM[N-1]).mag()<1e-4;
+    for(let i=0;i<N;i++){
+        let pp=i===0?null:ptsM[i-1], pn=i===N-1?null:ptsM[i+1], vin, vout, res;
+        if(cl){ pp=ptsM[(i-1+N)%N]; pn=ptsM[(i+1)%N]; }
+        if(pp) vin=ptsM[i].sub(pp).norm(); if(pn) vout=pn.sub(ptsM[i]).norm();
+        if(pp&&pn){ const v=VIA(pp,vin,ptsM[i],vout,th); if(v) res=v.Turn==='L'?{L:v.In,R:v.Out}:{L:v.Out,R:v.In}; else{const p=vin.perp(); res={L:ptsM[i].add(p.mul(th/2)),R:ptsM[i].sub(p.mul(th/2))}} }
+        else if(!pp){const p=vout.perp(); res={L:ptsM[i].add(p.mul(th/2)),R:ptsM[i].sub(p.mul(th/2))}}
+        else{const p=vin.perp(); res={L:ptsM[i].add(p.mul(th/2)),R:ptsM[i].sub(p.mul(th/2))}}
+        j.push(res);
+    }
+    return {points:ptsM, joints:j, isClosed:cl};
+}
+
+function getExtents() {
+    let mX=Infinity, MX=-Infinity, mY=Infinity, MY=-Infinity, v=false;
+    state.ents.forEach(e=>{
+        if(!state.layers[e.layer].visible) return;
+        const pts = parseCoords(e.geo); if(pts.length===0) return;
+        if (e.type === 'CIRCLE') {
+            let r = (e.thick||1) + (e.thickEnd||0)/2;
+            mX=Math.min(mX, pts[0].x-r); MX=Math.max(MX, pts[0].x+r);
+            mY=Math.min(mY, pts[0].y-r); MY=Math.max(MY, pts[0].y+r); v=true;
+        } else {
+            pts.forEach(p=>{mX=Math.min(mX,p.x);MX=Math.max(MX,p.x);mY=Math.min(mY,p.y);MY=Math.max(MY,p.y); v=true;});
+        }
+    });
+    return v ? {mX, MX, mY, MY, w:MX-mX||1, h:MY-mY||1, cx:(mX+MX)/2, cy:(mY+MY)/2} : null;
+}
+
+// ==========================================
+// INIT & EVENTS
+// ==========================================
+window.onload = () => {
+    resize(); window.addEventListener('resize', resize);
+    const cvs = document.getElementById('canvas');
+    
+    cvs.addEventListener('contextmenu', e => e.preventDefault());
+    
+    cvs.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); cvs.addEventListener('wheel', onWheel);
+    cvs.addEventListener('touchstart', e => { state.view.panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, vx: state.view.x, vy: state.view.y }; e.preventDefault(); }, {passive: false});
+    cvs.addEventListener('touchmove', e => { if(state.view.panStart) { state.view.x = state.view.panStart.vx + (e.touches[0].clientX - state.view.panStart.x); state.view.y = state.view.panStart.vy + (e.touches[0].clientY - state.view.panStart.y); draw(); e.preventDefault(); } }, {passive: false});
+    cvs.addEventListener('touchend', () => state.view.panStart = null);
+    document.getElementById('cmd-input').addEventListener('keydown', e => { if(e.key === 'Enter') { exec(e.target.value); e.target.value=''; } });
+    loadStorage(); renderLayers(); renderList(); centerView();
+    initNiceTitles(); // V1.0.10: Initialize custom tooltips
+    log("Wally V1.0.10 Ready. Type HELP for manual.");
+};
+
+function log(txt) { document.getElementById('cmd-history').innerText = txt; }
+
+function exec(cmdStr) {
+    const cmd = cmdStr.trim().toUpperCase(); log(cmd); const parts = cmd.split(' '); const op = parts[0];
+    if (op.includes(',')) { if(state.selection) { state.selection.geo += '\n' + op; updatePropUI(); draw(); saveStorage(); } return; }
+    
+    if (op === 'LINE') createEnt('LINE', state.currentLayer, "0,0\n10,0", 0);
+    else if (op === 'WALL') createEnt('WALL', state.currentLayer, "0,0\n20,0\n20,15", 5);
+    else if (op === 'CIRCLE') createEnt('CIRCLE', state.currentLayer, "0,0", 5, 0); 
+    else if (op === 'DIM') createEnt('DIM', 'DIMS', "0,-5\n20,-5", -5);
+    else if (op === 'TEXT') createEnt('TEXT', 'DIMS', "10,5", 4, 4, "NOTES");
+    else if (op === 'STAIR') createEnt('STAIR', 'STAIRS', "0,0\n100,0", 36, 11, "10"); 
+    else if (op === 'ERASE' || op === 'DEL') deleteSelection();
+    else if (op === 'ZOOM' || op === 'Z') { if(parts[1]==='E') centerView(); }
+    else if (op === 'REGEN' || op === 'RE') draw();
+    else if (op === 'HELP' || op === 'MANUAL') { const m = document.getElementById('manual-overlay'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
+    else if (op === 'DXF') exportDXF();
+    else if (op === 'HAL') { document.body.classList.toggle('hal-mode'); resize(); if(document.body.classList.contains('hal-mode')) centerView(); }
+    else if (op === 'BOOKMARK') loadPreset('BOOKMARK'); 
+    else if (op === 'SCRIPT') { document.getElementById('script-text').value = ''; document.getElementById('script-overlay').style.display = 'flex'; }
+}
+
+// V1.0.9 MACRO SCRIPT INTERPRETER
+function runScript() {
+    const txt = document.getElementById('script-text').value;
+    const lines = txt.split('\n');
+    let cEnt = null;
+    
+    const commit = () => {
+        if (cEnt && cEnt.type) {
+            createEnt(cEnt.type, state.currentLayer, cEnt.geo.join('\n'), cEnt.thick||0, cEnt.thickEnd||0, cEnt.textStr||"");
+        }
+    };
+
+    lines.forEach(line => {
+        let l = line.trim();
+        if(l.toUpperCase().startsWith('TYPE:')) { 
+            commit(); 
+            cEnt = { type: l.split(':')[1].trim().toUpperCase(), geo: [], thick: 0, thickEnd: 0, textStr: "" }; 
+        }
+        else if(cEnt) {
+            if(l.toUpperCase().startsWith('W/R:')) cEnt.thick = parseFloat(l.split(':')[1])||0;
+            else if(l.toUpperCase().startsWith('D/T:')) cEnt.thickEnd = parseFloat(l.split(':')[1])||0;
+            else if(l.toUpperCase().startsWith('TXT:')) cEnt.textStr = l.substring(4).trim();
+            else if(/^[-\d.]+\s*,\s*[-\d.]+/.test(l)) cEnt.geo.push(l);
+        }
+    });
+    commit(); // Commit the final entity
+    
+    document.getElementById('script-overlay').style.display = 'none';
+    selectEnt(null);
+    centerView();
+    draw();
+    saveStorage();
+    log("SCRIPT EXECUTED SUCCESSFULLY.");
+}
+
+function toggleLibrary() { 
+    const l = document.getElementById('library'); 
+    l.style.display = l.style.display === 'block' ? 'none' : 'block'; 
+}
+
+function loadPreset(k) {
+    state.ents = []; 
+    if(k==='BOOKMARK'){
+        createEnt('LINE', '0', "0.2,0\n5.4,0\n5.45,0.1\n5.55,0.1\n5.6,0\n8,0\n8,2\n5.6,2\n5.55,1.9\n5.45,1.9\n5.4,2\n0.2,2\n0,1.8\n0,0.2\n0.2,0", 0);
+        createEnt('CIRCLE', '0', "0.6,0.8", 0.15, 0); 
+        createEnt('CIRCLE', '0', "6.0,1.75", 0.12, 0); 
+        createEnt('CIRCLE', '0', "7.6,1.75", 0.12, 0); 
+        createEnt('CIRCLE', '0', "6.0,0.25", 0.12, 0); 
+        createEnt('CIRCLE', '0', "7.6,0.25", 0.12, 0); 
+        createEnt('LINE', '0', "6.45,0.7\n6.45,1.3\n7.15,1.3\n7.15,0.7\n6.45,0.7", 0); 
+        createEnt('LINE', '0', "1.8,0.4\n5.2,0.4\n5.2,1.6\n1.8,1.6\n1.8,0.4", 0); 
+        createEnt('TEXT', '0', "2.0,0.8", 0.4, 0, "A B C D E F G");
+    }
+    selectEnt(null); 
+    document.getElementById('library').style.display = 'none';
+    centerView(); draw(); saveStorage(); 
+    document.getElementById('cmd-history').innerText = "PRESET LOADED SUCCESSFULLY.";
+}
+
+// ==========================================
+// RENDERER & DYNAMIC OSNAP PATCH
+// ==========================================
+function draw() {
+    const cvs = document.getElementById('canvas'); const ctx = cvs.getContext('2d');
+    ctx.fillStyle = document.body.classList.contains('hal-mode') ? 'black' : '#121212';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    
+    if (!document.body.classList.contains('hal-mode')) {
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.beginPath();
+        const step = 10 * state.view.scale; const ox = state.view.x % step, oy = state.view.y % step;
+        for(let x=ox; x<cvs.width; x+=step) { ctx.moveTo(x,0); ctx.lineTo(x,cvs.height); }
+        for(let y=oy; y<cvs.height; y+=step) { ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); }
+        ctx.stroke();
+    }
+
+    ctx.save(); ctx.translate(state.view.x, state.view.y); ctx.scale(state.view.scale, -state.view.scale);
+
+    state.ents.forEach(ent => {
+        const lay = state.layers[ent.layer] || state.layers['0']; if (!lay.visible) return;
+        const isSel = state.selection === ent;
+        const col = isSel ? '#98c379' : (document.body.classList.contains('hal-mode') ? 'red' : lay.color);
+        const pts = parseCoords(ent.geo); if(pts.length===0) return;
+
+        if (ent.type === 'CIRCLE') {
+            const c = pts[0]; const r = ent.thick || 1; const w = ent.thickEnd || 0;
+            ctx.strokeStyle = col; ctx.lineWidth = (isSel ? 2 : 1) / state.view.scale;
+            ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI*2); ctx.stroke();
+            if (w > 0) {
+                ctx.beginPath(); ctx.arc(c.x, c.y, r + w/2, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(0.001, r - w/2), 0, Math.PI*2); ctx.stroke();
+            }
+            return;
+        }
+
+        if (ent.type === 'TEXT') {
+            ctx.save(); ctx.translate(pts[0].x, pts[0].y); ctx.scale(1, -1); 
+            ctx.fillStyle = col; ctx.font = `bold ${ent.thick}px sans-serif`; ctx.textAlign='left'; ctx.textBaseline='bottom';
+            ctx.fillText(ent.textStr || "TEXT", 0, 0); ctx.restore(); return;
+        }
+
+        if (ent.type === 'DIM' && pts.length >= 2) {
+            const p1 = pts[0], p2 = pts[1]; const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const len = Math.hypot(dx, dy); const nx = -dy/len, ny = dx/len; const off = ent.thick;
+            const d1 = {x: p1.x + nx*off, y: p1.y + ny*off}, d2 = {x: p2.x + nx*off, y: p2.y + ny*off};
+            ctx.strokeStyle = col; ctx.lineWidth = (isSel ? 2 : 1)/state.view.scale;
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(d1.x, d1.y); ctx.moveTo(p2.x, p2.y); ctx.lineTo(d2.x, d2.y); ctx.moveTo(d1.x, d1.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
+            ctx.save(); const mid = {x: (d1.x+d2.x)/2, y: (d1.y+d2.y)/2}; ctx.translate(mid.x, mid.y);
+            let ang = Math.atan2(dy, dx); if (ang > Math.PI/2 || ang < -Math.PI/2) ang += Math.PI; 
+            ctx.rotate(ang); ctx.scale(1, -1); ctx.fillStyle = col; ctx.font = `${Math.abs(off)*0.3 + 1}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='bottom';
+            ctx.fillText(ent.textStr ? ent.textStr : len.toFixed(2), 0, -2/state.view.scale); ctx.restore(); return;
+        }
+
+        if (ent.type === 'STAIR' && pts.length >= 2) {
+            const p1=pts[0], p2=pts[1]; const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy), nx=dx/len, ny=dy/len, px=-ny, py=nx; 
+            const N=parseInt(ent.textStr)||10, tDepth=ent.thickEnd||11, tWidth=ent.thick||36;
+            ctx.strokeStyle=col; ctx.lineWidth=(isSel?2:1)/state.view.scale;
+            ctx.setLineDash([5/state.view.scale]); ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); ctx.setLineDash([]);
+            for(let i=0; i<N; i++) {
+                const t=i/(N-1||1), cx=p1.x+dx*t, cy=p1.y+dy*t, halfW=tWidth/2, halfD=tDepth/2;
+                ctx.beginPath(); ctx.moveTo(cx+px*halfW-nx*halfD, cy+py*halfW-ny*halfD); ctx.lineTo(cx+px*halfW+nx*halfD, cy+py*halfW+ny*halfD); ctx.lineTo(cx-px*halfW+nx*halfD, cy-py*halfW+ny*halfD); ctx.lineTo(cx-px*halfW-nx*halfD, cy-py*halfW-ny*halfD); ctx.closePath(); ctx.stroke();
+                if (i === Math.floor(N/2)) { ctx.beginPath(); ctx.moveTo(cx-nx*halfD*0.5, cy-ny*halfD*0.5); ctx.lineTo(cx+nx*halfD*0.5, cy+ny*halfD*0.5); ctx.lineTo(cx+nx*halfD*0.5-px*2-nx*2, cy+ny*halfD*0.5-py*2-ny*2); ctx.moveTo(cx+nx*halfD*0.5, cy+ny*halfD*0.5); ctx.lineTo(cx+nx*halfD*0.5+px*2-nx*2, cy+ny*halfD*0.5+py*2-ny*2); ctx.stroke(); }
+            } return;
+        }
+
+        const geo = ComputeGeometry(ent.geo, ent.thick); if(!geo) return;
+        ctx.strokeStyle = col; ctx.lineWidth = (isSel ? 2 : 1) / state.view.scale;
+        if (ent.thick > 0 && ent.type !== 'LINE') {
+            const dp=(a)=>{ctx.beginPath(); a.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); if(geo.isClosed)ctx.closePath(); ctx.stroke();}
+            dp(geo.joints.map(j=>j.L)); dp(geo.joints.map(j=>j.R));
+            ctx.globalAlpha = document.body.classList.contains('hal-mode') ? 1.0 : 0.3;
+            ctx.setLineDash([5/state.view.scale]); ctx.beginPath(); geo.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke(); ctx.setLineDash([]);
+            ctx.globalAlpha = 1.0;
+        } else {
+            ctx.beginPath(); geo.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); if(geo.isClosed)ctx.closePath(); ctx.stroke();
+        }
+    });
+
+    if(state.osnap) { 
+        ctx.strokeStyle = 'yellow'; 
+        ctx.lineWidth = 2 / state.view.scale; 
+        const sSize = 15 / state.view.scale; 
+        ctx.strokeRect(state.osnap.x - sSize/2, state.osnap.y - sSize/2, sSize, sSize); 
+    }
+    ctx.restore();
+}
+
+// ==========================================
+// INTERACTION & ENTITY MGT
+// ==========================================
+function onDown(e) { 
+    if(e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey)) { 
+        state.view.panStart = { x: e.clientX, y: e.clientY, vx: state.view.x, vy: state.view.y }; 
+        return; 
+    } 
+    if(e.button === 0) { 
+        const hit = findHit(); selectEnt(hit); 
+    } 
+}
+function onMove(e) {
+    if(state.view.panStart) { state.view.x=state.view.panStart.vx+(e.clientX-state.view.panStart.x); state.view.y=state.view.panStart.vy+(e.clientY-state.view.panStart.y); draw(); return; }
+    const r=document.getElementById('canvas').getBoundingClientRect(); state.mouse.worldX=((e.clientX-r.left)-state.view.x)/state.view.scale; state.mouse.worldY=-((e.clientY-r.top)-state.view.y)/state.view.scale; calcOsnap(); draw();
+}
+function onUp() { state.view.panStart=null; }
+function onWheel(e) { state.view.scale *= e.deltaY<0 ? 1.1 : 0.9; draw(); }
+
+function findHit() {
+    const t=1.0/state.view.scale*10; return state.ents.find(ent => {
+        if(!state.layers[ent.layer].visible) return false;
+        if(ent.type==='CIRCLE') { const pts=parseCoords(ent.geo); if(pts.length>0) return Math.abs(Math.hypot(pts[0].x-state.mouse.worldX, pts[0].y-state.mouse.worldY) - (ent.thick||1)) < t; }
+        return parseCoords(ent.geo).some(p => Math.abs(p.x-state.mouse.worldX)<t && Math.abs(p.y-state.mouse.worldY)<t);
+    });
+}
+function calcOsnap() {
+    state.osnap = null; 
+    const t = 15 / state.view.scale; 
+    state.ents.forEach(ent => {
+        if(!state.layers[ent.layer].visible) return;
+        if(ent.type==='CIRCLE') { const pts=parseCoords(ent.geo); if(pts.length>0 && Math.hypot(pts[0].x-state.mouse.worldX, pts[0].y-state.mouse.worldY) < t) state.osnap=pts[0]; return; }
+        parseCoords(ent.geo).forEach(p => { if(Math.hypot(p.x-state.mouse.worldX, p.y-state.mouse.worldY) < t) state.osnap = p; });
+    });
+}
+
+function createEnt(type, layer, geo, thick, thickEnd=0, textStr="") { const ent={id:Date.now()+Math.random(), type, layer, geo, thick, thickEnd, textStr}; state.ents.push(ent); selectEnt(ent); centerView(); saveStorage(); return ent; }
+
+function selectEnt(ent) {
+    state.selection=ent; renderList(); 
+    if(ent) { document.getElementById('prop-type').value=ent.type; document.getElementById('prop-layer').value=ent.layer; document.getElementById('prop-thick').value=ent.thick; document.getElementById('prop-thickEnd').value=ent.thickEnd||ent.thick; document.getElementById('prop-textStr').value=ent.textStr||""; document.getElementById('prop-geo').value=ent.geo; } 
+    else { document.getElementById('prop-geo').value=''; } draw();
+}
+function updatePropUI() { if(!state.selection) return; document.getElementById('prop-geo').value=state.selection.geo; }
+function updateProp() {
+    if(!state.selection) return;
+    state.selection.type=document.getElementById('prop-type').value; state.selection.layer=document.getElementById('prop-layer').value; state.selection.thick=parseFloat(document.getElementById('prop-thick').value)||0; state.selection.thickEnd=parseFloat(document.getElementById('prop-thickEnd').value)||0; state.selection.textStr=document.getElementById('prop-textStr').value; state.selection.geo=document.getElementById('prop-geo').value; draw(); saveStorage();
+}
+function deleteSelection() { if(state.selection) { state.ents = state.ents.filter(e => e!==state.selection); selectEnt(null); saveStorage(); draw(); } }
+
+function resize() { const cvs=document.getElementById('canvas'); const p=document.getElementById('canvas-area'); cvs.width=p.clientWidth; cvs.height=p.clientHeight; draw(); }
+function centerView() { const ext=getExtents(); if(!ext) return; const cvs=document.getElementById('canvas'); state.view.scale=Math.min((cvs.width-50)/ext.w, (cvs.height-50)/ext.h); state.view.x=(cvs.width/2)-(ext.cx*state.view.scale); state.view.y=(cvs.height/2)+(ext.cy*state.view.scale); draw(); }
+
+function renderLayers() {
+    const list=document.getElementById('layer-list'); const sel=document.getElementById('prop-layer'); list.innerHTML=''; sel.innerHTML='';
+    Object.keys(state.layers).forEach(name => {
+        const row=document.createElement('div'); row.className='list-row'; const lay=state.layers[name]; row.innerHTML=`<span style="color:${lay.color}">${name}</span>`;
+        const vis=document.createElement('div'); vis.className='layer-vis'+(lay.visible?' on':''); vis.onclick=()=>{lay.visible=!lay.visible; renderLayers(); draw();};
+        row.appendChild(vis); list.appendChild(row); const opt=document.createElement('option'); opt.value=name; opt.text=name; sel.appendChild(opt);
+    });
+}
+function renderList() {
+    const list=document.getElementById('ent-list'); list.innerHTML='';
+    state.ents.forEach(ent => {
+        const row=document.createElement('div'); row.className='list-row'+(state.selection===ent?' selected':'');
+        let icon=ent.type==='DIM'?'📏':(ent.type==='TEXT'?'A':(ent.type==='STAIR'?'🪜':(ent.type==='CIRCLE'?'⭕':(ent.type==='WALL'?'🧱':'/'))));
+        row.innerText=`${icon} ${ent.type} [${ent.layer}]`; row.onclick=()=>selectEnt(ent); list.appendChild(row);
+    });
+}
+function addLayer() { const name=prompt("Layer Name:"); if(name) { state.layers[name.toUpperCase()]={color:'#ffffff', visible:true}; renderLayers(); } }
+
+// ==========================================
+// STORAGE & DXF
+// ==========================================
+function saveStorage() { localStorage.setItem('wally_master', JSON.stringify({ents:state.ents, layers:state.layers})); }
+function loadStorage() { const d=localStorage.getItem('wally_master'); if(d) { const p=JSON.parse(d); state.ents=p.ents||[]; state.layers=p.layers||state.layers; } }
+function fileSave() { const b=new Blob([JSON.stringify(state)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='wally_dwg.json'; a.click(); }
+function fileNew() { if(confirm("Start New?")) { state.ents=[]; selectEnt(null); renderList(); draw(); saveStorage(); } }
+function fileLoad() { document.getElementById('file-input').click(); }
+function handleFile(inp) { const r=new FileReader(); r.onload=e=>{ const d=JSON.parse(e.target.result); state.ents=d.ents; state.layers=d.layers; renderLayers(); renderList(); centerView(); }; r.readAsText(inp.files[0]); }
+
+function exportDXF() {
+    let dxf = "0\nSECTION\n2\nENTITIES\n";
+    state.ents.forEach(ent => {
+        if(!state.layers[ent.layer].visible || ent.type==='TEXT' || ent.type==='DIM' || ent.type==='STAIR') return;
+        const pts = parseCoords(ent.geo); if(pts.length<1) return;
+        
+        if (ent.type === 'CIRCLE') {
+            const r = ent.thick||1; const w = ent.thickEnd||0;
+            if (w > 0) {
+                dxf += `0\nCIRCLE\n8\n${ent.layer}\n10\n${pts[0].x}\n20\n${pts[0].y}\n40\n${r + w/2}\n`;
+                dxf += `0\nCIRCLE\n8\n${ent.layer}\n10\n${pts[0].x}\n20\n${pts[0].y}\n40\n${Math.max(0.001, r - w/2)}\n`;
+            } else {
+                dxf += `0\nCIRCLE\n8\n${ent.layer}\n10\n${pts[0].x}\n20\n${pts[0].y}\n40\n${r}\n`;
+            }
+            return;
+        }
+
+        if (ent.thick > 0 && ent.type !== 'LINE') {
+            const geo = ComputeGeometry(ent.geo, ent.thick); if(!geo) return;
+            const Ls = geo.joints.map(j=>j.L), Rs = geo.joints.map(j=>j.R);
+            if(Ls.length>0 && Rs.length>0) {
+                if(geo.isClosed) {
+                    dxf += `0\nLWPOLYLINE\n8\n${ent.layer}\n66\n1\n90\n${Ls.length}\n70\n1\n`; 
+                    Ls.forEach(p => { dxf += `10\n${p.x}\n20\n${p.y}\n`; });
+                    dxf += `0\nLWPOLYLINE\n8\n${ent.layer}\n66\n1\n90\n${Rs.length}\n70\n1\n`;
+                    Rs.forEach(p => { dxf += `10\n${p.x}\n20\n${p.y}\n`; });
+                } else {
+                    let outPts = [...Ls, ...[...Rs].reverse()];
+                    dxf += `0\nLWPOLYLINE\n8\n${ent.layer}\n66\n1\n90\n${outPts.length}\n70\n1\n`; 
+                    outPts.forEach(p => { dxf += `10\n${p.x}\n20\n${p.y}\n`; });
+                }
+            }
+        } else if (pts.length > 1) {
+            const isClosed = Math.hypot(pts[0].x - pts[pts.length-1].x, pts[0].y - pts[pts.length-1].y) < 1e-4;
+            const closedFlag = isClosed ? 1 : 0;
+            const exportPts = isClosed ? pts.slice(0, -1) : pts; 
+
+            dxf += `0\nLWPOLYLINE\n8\n${ent.layer}\n66\n1\n90\n${exportPts.length}\n70\n${closedFlag}\n`;
+            exportPts.forEach(p => { dxf += `10\n${p.x}\n20\n${p.y}\n`; });
+        }
+    });
+    dxf += "0\nENDSEC\n0\nEOF";
+    
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dxf], {type: 'application/dxf'})); a.download = 'wally_exp.dxf'; a.click();
+    document.getElementById('cmd-history').innerText = "DXF EXPORTED.";
+    draw(); 
+}
+
+// ==========================================
+// PLOTTER (PDF)
+// ==========================================
+function parseScaleRatio(s) {
+    const str = s.replace(/\s+/g, '').toLowerCase();
+    if (str.includes(':')) { const p=str.split(':'); return parseFloat(p[0])/parseFloat(p[1]); }
+    if (str.includes('=')) {
+        const p=str.split('='); let L=p[0].replace('"',''), R=p[1], lv=L.includes('/')?parseFloat(L.split('/')[0])/parseFloat(L.split('/')[1]):parseFloat(L)||1;
+        let rv=12, ft=0, inc=0; const fM=R.match(/(\d+(?:\.\d+)?)'/); if(fM) ft=parseFloat(fM[1]);
+        const iM=R.replace(/(\d+(?:\.\d+)?)'?-?/,'').match(/(\d+(?:\.\d+)?)"/); if(iM) inc=parseFloat(iM[1]); else if(R.includes('"')&&!R.includes("'")) inc=parseFloat(R)||0;
+        if(fM||iM) rv=(ft*12)+inc; return lv/rv;
+    } return parseFloat(str)||1;
+}
+
+function autoFitScale() {
+    const ext = getExtents(); if(!ext) return; 
+    const pS=document.getElementById('paperSize').value, or=document.getElementById('paperOrient').value;
+    let pW=8.5, pH=11; if(pS==='TABLOID'){pW=11;pH=17;} if(pS==='A4'){pW=8.27;pH=11.69;} if(pS==='A3'){pW=11.69;pH=16.53;}
+    if(or==='L'){let t=pW;pW=pH;pH=t;} const uM=document.getElementById('unitMap').value;
+    let gW=ext.w, gH=ext.h; if(uM==='MM'){gW/=25.4;gH/=25.4;} if(uM==='FT'){gW*=12;gH*=12;}
+    const rF=Math.min((pW-1.0)/gW, (pH-1.0)/gH);
+    let st=uM==='MM'?[{r:1/1,l:"1:1"},{r:1/5,l:"1:5"},{r:1/10,l:"1:10"},{r:1/50,l:"1:50"},{r:1/100,l:"1:100"}]:[{r:1/1,l:"12\" = 1'-0\""},{r:1/4,l:"3\" = 1'-0\""},{r:1/12,l:"1\" = 1'-0\""},{r:1/48,l:"1/4\" = 1'-0\""},{r:1/96,l:"1/8\" = 1'-0\""}];
+    let bs=st.find(s=>s.r<=rF); document.getElementById('printScale').value = bs ? bs.l : `1:${Math.ceil(1/rF)}`;
+}
+
+function exportPDF() {
+    if (!window.jspdf || !window.jspdf.jsPDF) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: document.getElementById('paperOrient').value==='L'?'l':'p', unit: 'in', format: document.getElementById('paperSize').value.toLowerCase() });
+    const sStr=document.getElementById('printScale').value, sR=parseScaleRatio(sStr), uM=document.getElementById('unitMap').value, uMult=uM==='MM'?0.03937:(uM==='FT'?12.0:1.0);
+    const ext = getExtents(); if(!ext) return;
+    const cx=doc.internal.pageSize.getWidth()/2, cy=doc.internal.pageSize.getHeight()/2, toPdf = p => ({ x: cx+(p.x-ext.cx)*uMult*sR, y: cy-(p.y-ext.cy)*uMult*sR });
+    doc.setLineJoin('miter');
+
+    state.ents.forEach(ent => {
+        if (!state.layers[ent.layer].visible) return;
+        const pts = parseCoords(ent.geo); if(pts.length===0) return;
+        
+        if (ent.type === 'CIRCLE') {
+            const c = toPdf(pts[0]), r = (ent.thick||1)*uMult*sR, w = (ent.thickEnd||0)*uMult*sR;
+            doc.setLineDash([0.05, 0.05]); doc.setLineWidth(0.005); doc.setDrawColor(150);
+            doc.circle(c.x, c.y, r, 'S');
+            if (w > 0) {
+                doc.setLineDash([]); doc.setLineWidth(0.015); doc.setDrawColor(0);
+                doc.circle(c.x, c.y, r + w/2, 'S');
+                if (r - w/2 > 0) doc.circle(c.x, c.y, r - w/2, 'S');
+            }
+            return;
+        }
+
+        if (ent.type === 'TEXT') { let pt=toPdf(pts[0]); doc.setTextColor(0); doc.setFontSize(Math.max(ent.thick*uMult*sR*72, 2)); doc.text(ent.textStr||"TEXT", pt.x, pt.y); return; }
+        if (ent.type === 'DIM' && pts.length >= 2) {
+            const dx=pts[1].x-pts[0].x, dy=pts[1].y-pts[0].y, len=Math.hypot(dx,dy), nx=-dy/len, ny=dx/len, off=ent.thick;
+            const d1={x:pts[0].x+nx*off,y:pts[0].y+ny*off}, d2={x:pts[1].x+nx*off,y:pts[1].y+ny*off};
+            let pP1=toPdf(pts[0]), pP2=toPdf(pts[1]), pD1=toPdf(d1), pD2=toPdf(d2);
+            doc.setLineWidth(0.005); doc.setDrawColor(100); doc.line(pP1.x,pP1.y,pD1.x,pD1.y); doc.line(pP2.x,pP2.y,pD2.x,pD2.y); doc.line(pD1.x,pD1.y,pD2.x,pD2.y);
+            const tl=0.05; doc.line(pD1.x-tl,pD1.y+tl,pD1.x+tl,pD1.y-tl); doc.line(pD2.x-tl,pD2.y+tl,pD2.x+tl,pD2.y-tl);
+            let a=Math.atan2(pD2.y-pD1.y,pD2.x-pD1.x)*(180/Math.PI); if(a>90||a<-90) a+=180;
+            doc.setFontSize(Math.max((Math.abs(off)*0.3+1)*uMult*sR*72, 4)); doc.text(ent.textStr||len.toFixed(2), (pD1.x+pD2.x)/2, (pD1.y+pD2.y)/2-0.02, {angle:a, align:'center'}); return;
+        }
+        if (ent.type === 'STAIR' && pts.length >= 2) {
+            const dx=pts[1].x-pts[0].x, dy=pts[1].y-pts[0].y, len=Math.hypot(dx,dy), nx=dx/len, ny=dy/len, px=-ny, py=nx;
+            const N=parseInt(ent.textStr)||10, tDepth=ent.thickEnd||11, tWidth=ent.thick||36;
+            doc.setLineWidth(0.015); doc.setDrawColor(0);
+            for(let i=0; i<N; i++) {
+                const t=i/(N-1||1), c_x=pts[0].x+dx*t, c_y=pts[0].y+dy*t, halfW=tWidth/2, halfD=tDepth/2;
+                const c1=toPdf({x:c_x+px*halfW-nx*halfD, y:c_y+py*halfW-ny*halfD}), c2=toPdf({x:c_x+px*halfW+nx*halfD, y:c_y+py*halfW+ny*halfD});
+                const c3=toPdf({x:c_x-px*halfW+nx*halfD, y:c_y-py*halfW+ny*halfD}), c4=toPdf({x:c_x-px*halfW-nx*halfD, y:c_y-py*halfW-ny*halfD});
+                doc.lines([[c2.x-c1.x, c2.y-c1.y], [c3.x-c2.x, c3.y-c2.y], [c4.x-c3.x, c4.y-c3.y]], c1.x, c1.y, [1,1], 'S', true);
+            } return;
+        }
+
+        const geo = ComputeGeometry(ent.geo, ent.thick); if(!geo) return;
+        doc.setLineDash([0.05, 0.05]); doc.setLineWidth(0.005); doc.setDrawColor(150);
+        let clS=toPdf(geo.points[0]), clL=[]; for(let i=1;i<geo.points.length;i++) clL.push([toPdf(geo.points[i]).x-toPdf(geo.points[i-1]).x, toPdf(geo.points[i]).y-toPdf(geo.points[i-1]).y]);
+        if(clL.length>0) doc.lines(clL, clS.x, clS.y, [1,1], 'S', false);
+
+        if(ent.thick > 0 && ent.type !== 'LINE') {
+            doc.setLineDash([]); doc.setLineWidth(0.015); doc.setDrawColor(0);
+            const Ls=geo.joints.map(j=>toPdf(j.L)), Rs=geo.joints.map(j=>toPdf(j.R));
+            if(Ls.length>0 && Rs.length>0){
+                let oS=Ls[0], oL=[]; for(let i=1;i<Ls.length;i++) oL.push([Ls[i].x-Ls[i-1].x, Ls[i].y-Ls[i-1].y]);
+                if(geo.isClosed){
+                    if(oL.length>0) doc.lines(oL, oS.x, oS.y, [1,1], 'S', true);
+                    let rS=Rs[0], rL=[]; for(let i=1;i<Rs.length;i++) rL.push([Rs[i].x-Rs[i-1].x, Rs[i].y-Rs[i-1].y]);
+                    if(rL.length>0) doc.lines(rL, rS.x, rS.y, [1,1], 'S', true);
+                } else {
+                    oL.push([Rs[Rs.length-1].x-Ls[Ls.length-1].x, Rs[Rs.length-1].y-Ls[Ls.length-1].y]);
+                    for(let i=Rs.length-2;i>=0;i--) oL.push([Rs[i].x-Rs[i+1].x, Rs[i].y-Rs[i+1].y]);
+                    if(oL.length>0) doc.lines(oL, oS.x, oS.y, [1,1], 'S', true);
+                }
+            }
+        }
+    });
+
+    const m=0.5, pW=doc.internal.pageSize.getWidth(), pH=doc.internal.pageSize.getHeight(), tH=0.6, tY=pH-m-tH;
+    doc.setLineDash([]); doc.setLineWidth(0.01); doc.setDrawColor(0);
+    doc.rect(m, tY, pW-(m*2), tH); doc.line(pW-4.0, tY, pW-4.0, tY+tH); doc.line(pW-2.0, tY, pW-2.0, tY+tH);
+    doc.setTextColor(0); doc.setFontSize(10); doc.text("TITLE: WALLY PLOT", m+0.1, tY+0.25);
+    doc.setFontSize(8); doc.setTextColor(100); doc.text("LKA | LAST KNOWN ADDRESS", m+0.1, tY+0.45);
+    doc.setTextColor(0); doc.text(`SCALE: ${sStr}`, pW-3.9, tY+0.25); doc.text(`UNIT: 1 = 1 ${uM}`, pW-3.9, tY+0.45);
+    doc.text("DWG NO: 01", pW-1.9, tY+0.25); doc.text(`DATE: ${new Date().toLocaleDateString()}`, pW-1.9, tY+0.45);
+    let cX=pW-m-1.0, cY=tY-0.3; doc.line(cX,cY,cX+1.0,cY); doc.line(cX,cY-0.05,cX,cY+0.05); doc.line(cX+1.0,cY-0.05,cX+1.0,cY+0.05);
+    doc.setFontSize(6); doc.text("1 INCH CHECK", cX+0.5, cY-0.08, {align:"center"});
+    let nX=pW-m-0.3, nY=m+0.5; doc.circle(nX,nY,0.15); doc.line(nX,nY+0.15,nX,nY-0.25); doc.line(nX,nY-0.25,nX-0.08,nY-0.05); doc.line(nX,nY-0.25,nX+0.08,nY-0.05);
+    doc.setFontSize(10); doc.text("N", nX, nY-0.35, {align:"center"});
+
+    doc.save('wally_master.pdf');
+}
+</script>
+</body>
+</html>
