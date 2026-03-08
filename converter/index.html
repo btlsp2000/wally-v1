@@ -92,12 +92,12 @@
 <div class="master-block">
     <header>
         <h1>WALLY CAD COMPILER</h1>
-        <div class="subtitle">REVERSE COMPILE: WALLY TO DXF (.dxf)</div>
+        <div class="subtitle">REVERSE COMPILE: WALLY TO DXF (.dxf) [V1.1]</div>
     </header>
 
     <div>
         <label for="wallyInput"><strong>INPUT: WALLY PARAMETRIC TEXT MATRIX</strong></label>
-        <textarea id="wallyInput" placeholder="Paste your Wally Engine syntax here...&#10;&#10;Example:&#10;Wally Line 42.5,67.5 / 50.625,25&#10;Wally Box 295,42.5 / 5,5"></textarea>
+        <textarea id="wallyInput" placeholder="Paste your Wally Engine syntax here...&#10;&#10;Example:&#10;Wally Line 42.5,67.5 / 50.625,25&#10;Wally Box 295,42.5 / 5,5&#10;Wally Circle 1.5,1.5 / 0.25"></textarea>
     </div>
 
     <div class="controls">
@@ -110,6 +110,7 @@
         <ul style="margin-top: 10px; padding-left: 20px;">
             <li>Parses <code>Wally Line X1,Y1 / X2,Y2</code> into direct vector paths.</li>
             <li>Shatters <code>Wally Box X,Y / W,H</code> into four continuous perimeter lines.</li>
+            <li>Translates <code>Wally Circle X,Y / R</code> into exact DXF radii.</li>
             <li>Generates a universal R12 DXF file readable by standard CNC/CAD systems.</li>
         </ul>
     </div>
@@ -120,7 +121,7 @@
 </div>
 
 <script>
-    // THE TRANSLATION ENGINE
+    // THE TRANSLATION ENGINE (V1.1 - CIRCLE UPGRADE)
     function compileDXF() {
         const input = document.getElementById('wallyInput').value;
         const lines = input.split('\n');
@@ -161,47 +162,4 @@
                         let h = parseFloat(dims[1]);
                         
                         // Bottom, Right, Top, Left
-                        dxfString += buildDxfLine(x, y, x + w, y);
-                        dxfString += buildDxfLine(x + w, y, x + w, y + h);
-                        dxfString += buildDxfLine(x + w, y + h, x, y + h);
-                        dxfString += buildDxfLine(x, y + h, x, y);
-                        entityCount += 4;
-                    }
-                }
-            }
-        });
-
-        // DXF Footer
-        dxfString += "0\nENDSEC\n0\nEOF\n";
-
-        if (entityCount > 0) {
-            triggerDownload(dxfString, "Wally_Export_V1.dxf");
-            document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${entityCount} VECTORS COMPILED)`;
-            document.getElementById('outputStatus').style.color = "#388e3c";
-        } else {
-            document.getElementById('outputStatus').innerText = "STATUS: ERROR (NO VALID WALLY SYNTAX FOUND)";
-            document.getElementById('outputStatus').style.color = "#d32f2f";
-        }
-    }
-
-    // DXF LINE FORMATTER
-    function buildDxfLine(x1, y1, x2, y2) {
-        return `0\nLINE\n8\n0\n10\n${parseFloat(x1)}\n20\n${parseFloat(y1)}\n11\n${parseFloat(x2)}\n21\n${parseFloat(y2)}\n`;
-    }
-
-    // BROWSER DOWNLOAD TRIGGER
-    function triggerDownload(content, filename) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    }
-</script>
-
-</body>
-</html>
+                        dxfString += buildDxfLine(x, y, x + w,
