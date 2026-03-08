@@ -162,4 +162,64 @@
                         let h = parseFloat(dims[1]);
                         
                         // Bottom, Right, Top, Left
-                        dxfString += buildDxfLine(x, y, x + w,
+                        dxfString += buildDxfLine(x, y, x + w, y);
+                        dxfString += buildDxfLine(x + w, y, x + w, y + h);
+                        dxfString += buildDxfLine(x + w, y + h, x, y + h);
+                        dxfString += buildDxfLine(x, y + h, x, y);
+                        entityCount += 4;
+                    }
+                }
+            }
+            
+            // COMPILE: CIRCLE
+            else if (line.startsWith("Wally Circle")) {
+                let params = line.replace("Wally Circle", "").trim().split("/");
+                if (params.length === 2) {
+                    let center = params[0].split(",");
+                    let radius = parseFloat(params[1].trim());
+                    if (center.length === 2 && !isNaN(radius)) {
+                        dxfString += buildDxfCircle(parseFloat(center[0]), parseFloat(center[1]), radius);
+                        entityCount++;
+                    }
+                }
+            }
+        });
+
+        // DXF Footer
+        dxfString += "0\nENDSEC\n0\nEOF\n";
+
+        if (entityCount > 0) {
+            triggerDownload(dxfString, "Wally_Export_V1-1.dxf");
+            document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${entityCount} ENTITIES COMPILED)`;
+            document.getElementById('outputStatus').style.color = "#388e3c";
+        } else {
+            document.getElementById('outputStatus').innerText = "STATUS: ERROR (NO VALID WALLY SYNTAX FOUND)";
+            document.getElementById('outputStatus').style.color = "#d32f2f";
+        }
+    }
+
+    // DXF LINE FORMATTER
+    function buildDxfLine(x1, y1, x2, y2) {
+        return `0\nLINE\n8\n0\n10\n${parseFloat(x1)}\n20\n${parseFloat(y1)}\n11\n${parseFloat(x2)}\n21\n${parseFloat(y2)}\n`;
+    }
+
+    // DXF CIRCLE FORMATTER
+    function buildDxfCircle(cx, cy, r) {
+        return `0\nCIRCLE\n8\n0\n10\n${cx}\n20\n${cy}\n40\n${r}\n`;
+    }
+
+    // BROWSER DOWNLOAD TRIGGER
+    function triggerDownload(content, filename) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+</body>
+</html>
