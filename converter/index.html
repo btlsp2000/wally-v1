@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wally to DXF Compiler | LKA Enterprise</title>
+    <title>Wally to DXF/PDF Compiler | LKA Enterprise</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
         /* WALLY ENGINE UI STYLES */
         body {
@@ -70,6 +73,13 @@
         button:hover {
             background: #444;
         }
+        .btn-pdf {
+            background: #555;
+            margin-left: 10px;
+        }
+        .btn-pdf:hover {
+            background: #333;
+        }
         .status-log {
             margin-top: 25px;
             border: 1px solid #000;
@@ -92,26 +102,28 @@
 <div class="master-block">
     <header>
         <h1>WALLY CAD COMPILER</h1>
-        <div class="subtitle">REVERSE COMPILE: WALLY TO DXF (.dxf) [V1.1]</div>
+        <div class="subtitle">DUAL OUTPUT: DXF MACHINE PATH & PDF PLOT [V1.2]</div>
     </header>
 
     <div>
         <label for="wallyInput"><strong>INPUT: WALLY PARAMETRIC TEXT MATRIX</strong></label>
-        <textarea id="wallyInput" placeholder="Paste your Wally Engine syntax here...&#10;&#10;Example:&#10;Wally Line 42.5,67.5 / 50.625,25&#10;Wally Box 295,42.5 / 5,5&#10;Wally Circle 1.5,1.5 / 0.25"></textarea>
+        <textarea id="wallyInput" placeholder="Paste your Wally Engine syntax here...&#10;&#10;Example:&#10;Wally Line 0.5,0.5 / 3,1.5&#10;Wally Box 0,0 / 3.5,2&#10;Wally Circle 1.75,1 / 0.25"></textarea>
     </div>
 
     <div class="controls">
-        <button onclick="compileDXF()">COMPILE TO DXF</button>
+        <div>
+            <button onclick="compileDXF()">COMPILE TO DXF</button>
+            <button onclick="compilePDF()" class="btn-pdf">PLOT TO PDF</button>
+        </div>
         <span id="outputStatus" style="font-weight: bold; color: #d32f2f;">STATUS: STANDBY</span>
     </div>
 
     <div class="status-log">
         <strong>COMPILER LOGIC:</strong>
         <ul style="margin-top: 10px; padding-left: 20px;">
-            <li>Parses <code>Wally Line X1,Y1 / X2,Y2</code> into direct vector paths.</li>
-            <li>Shatters <code>Wally Box X,Y / W,H</code> into four continuous perimeter lines.</li>
-            <li>Translates <code>Wally Circle X,Y / R</code> into exact DXF radii.</li>
-            <li>Generates a universal R12 DXF file readable by standard CNC/CAD systems.</li>
+            <li>Parses <code>Wally Line</code>, <code>Wally Box</code>, and <code>Wally Circle</code> elements.</li>
+            <li><strong>DXF ROUTE:</strong> Generates a universal R12 DXF file readable by CNC/CAD systems.</li>
+            <li><strong>PDF ROUTE:</strong> Generates a flat, 8.5x11 architectural plot for human review, handling the Cartesian Y-axis inversion automatically.</li>
         </ul>
     </div>
 
@@ -121,7 +133,9 @@
 </div>
 
 <script>
-    // THE TRANSLATION ENGINE (V1.1 - CIRCLE UPGRADE)
+    // ----------------------------------------------------
+    // ENGINE 1: THE DXF TRANSLATOR (V1.1)
+    // ----------------------------------------------------
     function compileDXF() {
         const input = document.getElementById('wallyInput').value;
         const lines = input.split('\n');
@@ -132,8 +146,6 @@
 
         lines.forEach(line => {
             line = line.trim();
-            
-            // IGNORE EMPTY LINES OR COMMENTS
             if (!line || !line.startsWith("Wally")) return;
 
             // COMPILE: LINE
@@ -149,7 +161,7 @@
                 }
             }
             
-            // COMPILE: BOX (Shattered into 4 lines)
+            // COMPILE: BOX
             else if (line.startsWith("Wally Box")) {
                 let params = line.replace("Wally Box", "").trim().split("/");
                 if (params.length === 2) {
@@ -161,7 +173,6 @@
                         let w = parseFloat(dims[0]);
                         let h = parseFloat(dims[1]);
                         
-                        // Bottom, Right, Top, Left
                         dxfString += buildDxfLine(x, y, x + w, y);
                         dxfString += buildDxfLine(x + w, y, x + w, y + h);
                         dxfString += buildDxfLine(x + w, y + h, x, y + h);
@@ -189,28 +200,107 @@
         dxfString += "0\nENDSEC\n0\nEOF\n";
 
         if (entityCount > 0) {
-            triggerDownload(dxfString, "Wally_Export_V1-1.dxf");
-            document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${entityCount} ENTITIES COMPILED)`;
-            document.getElementById('outputStatus').style.color = "#388e3c";
+            triggerDownload(dxfString, "Wally_Export_V1-2.dxf", "text/plain");
+            updateStatus(`SUCCESS (${entityCount} DXF ENTITIES COMPILED)`, "#388e3c");
         } else {
-            document.getElementById('outputStatus').innerText = "STATUS: ERROR (NO VALID WALLY SYNTAX FOUND)";
-            document.getElementById('outputStatus').style.color = "#d32f2f";
+            updateStatus("ERROR (NO VALID WALLY SYNTAX FOUND)", "#d32f2f");
         }
     }
 
-    // DXF LINE FORMATTER
+    // ----------------------------------------------------
+    // ENGINE 2: THE PDF PLOTTER (V1.2)
+    // ----------------------------------------------------
+    function compilePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'in', format: [8.5, 11] });
+        
+        const input = document.getElementById('wallyInput').value;
+        const lines = input.split('\n');
+        let entityCount = 0;
+
+        // CARTESIAN INVERSION SETTINGS
+        const pageHeight = 11;
+        const marginX = 0.5;
+        const marginY = 0.5;
+        
+        // Standard drafting pen weight
+        doc.setLineWidth(0.01); 
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line || !line.startsWith("Wally")) return;
+
+            // PLOT: LINE
+            if (line.startsWith("Wally Line")) {
+                let coords = line.replace("Wally Line", "").trim().split("/");
+                if (coords.length === 2) {
+                    let start = coords[0].split(",");
+                    let end = coords[1].split(",");
+                    if (start.length === 2 && end.length === 2) {
+                        let x1 = parseFloat(start[0]) + marginX;
+                        let y1 = pageHeight - marginY - parseFloat(start[1]);
+                        let x2 = parseFloat(end[0]) + marginX;
+                        let y2 = pageHeight - marginY - parseFloat(end[1]);
+                        doc.line(x1, y1, x2, y2);
+                        entityCount++;
+                    }
+                }
+            }
+            
+            // PLOT: BOX
+            else if (line.startsWith("Wally Box")) {
+                let params = line.replace("Wally Box", "").trim().split("/");
+                if (params.length === 2) {
+                    let origin = params[0].split(",");
+                    let dims = params[1].split(",");
+                    if (origin.length === 2 && dims.length === 2) {
+                        let w = parseFloat(dims[0]);
+                        let h = parseFloat(dims[1]);
+                        let x = parseFloat(origin[0]) + marginX;
+                        let y = pageHeight - marginY - parseFloat(origin[1]) - h; 
+                        doc.rect(x, y, w, h);
+                        entityCount++;
+                    }
+                }
+            }
+            
+            // PLOT: CIRCLE
+            else if (line.startsWith("Wally Circle")) {
+                let params = line.replace("Wally Circle", "").trim().split("/");
+                if (params.length === 2) {
+                    let center = params[0].split(",");
+                    let r = parseFloat(params[1].trim());
+                    if (center.length === 2 && !isNaN(r)) {
+                        let cx = parseFloat(center[0]) + marginX;
+                        let cy = pageHeight - marginY - parseFloat(center[1]);
+                        doc.circle(cx, cy, r);
+                        entityCount++;
+                    }
+                }
+            }
+        });
+
+        if (entityCount > 0) {
+            doc.save("Wally_Plot_V1-2.pdf");
+            updateStatus(`SUCCESS (${entityCount} PDF ENTITIES PLOTTED)`, "#388e3c");
+        } else {
+            updateStatus("ERROR (NO VALID WALLY SYNTAX FOUND)", "#d32f2f");
+        }
+    }
+
+    // ----------------------------------------------------
+    // UTILITY FUNCTIONS
+    // ----------------------------------------------------
     function buildDxfLine(x1, y1, x2, y2) {
         return `0\nLINE\n8\n0\n10\n${parseFloat(x1)}\n20\n${parseFloat(y1)}\n11\n${parseFloat(x2)}\n21\n${parseFloat(y2)}\n`;
     }
 
-    // DXF CIRCLE FORMATTER
     function buildDxfCircle(cx, cy, r) {
         return `0\nCIRCLE\n8\n0\n10\n${cx}\n20\n${cy}\n40\n${r}\n`;
     }
 
-    // BROWSER DOWNLOAD TRIGGER
-    function triggerDownload(content, filename) {
-        const blob = new Blob([content], { type: 'text/plain' });
+    function triggerDownload(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -219,6 +309,12 @@
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+    }
+
+    function updateStatus(message, color) {
+        const statusEl = document.getElementById('outputStatus');
+        statusEl.innerText = `STATUS: ${message}`;
+        statusEl.style.color = color;
     }
 </script>
 </body>
