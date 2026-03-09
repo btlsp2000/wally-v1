@@ -3,53 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WallyCAD Visual Studio | LKA Enterprise</title>
+    <title>WallyCAD Studio | Live Viewport</title>
     <style>
         /* WALLY ENGINE UI STYLES */
         body {
-            background-color: #e0e0e0;
+            background-color: #1a1a1a; /* Dark mode for the drafting studio */
             font-family: 'Courier New', Courier, monospace;
-            color: #000;
+            color: #fff;
             margin: 0;
-            padding: 2%;
+            padding: 2% 5%;
             display: flex;
             justify-content: center;
         }
         .master-block {
             width: 100%;
             max-width: 900px;
-            background: #fff;
-            border: 3px solid #000;
-            padding: 30px;
-            box-shadow: 8px 8px 0px #000;
+            background: #222;
+            border: 2px solid #555;
+            padding: 20px;
+            box-shadow: 5px 5px 0px #000;
         }
         header {
-            border-bottom: 2px solid #000;
+            border-bottom: 1px solid #555;
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
-        h1 { margin: 0; font-size: 2em; letter-spacing: 2px; text-transform: uppercase; }
-        .subtitle { font-weight: bold; color: #555; margin-top: 5px; }
-        
-        /* THE VIEWPORT */
-        .canvas-container {
-            background: #111; /* Dark Mode Drafting Board */
-            border: 2px solid #000;
-            margin-bottom: 20px;
-            position: relative;
+        h1 {
+            margin: 0;
+            font-size: 1.8em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .subtitle {
+            font-weight: bold;
+            color: #aaa;
+            margin-top: 5px;
         }
         canvas {
-            display: block;
+            background-color: #000;
+            border: 1px solid #444;
             width: 100%;
-            height: 400px;
+            height: 400px; /* Fixed height for the viewport */
+            cursor: crosshair;
+            margin-bottom: 20px;
         }
-
-        /* I/O CONTROLS */
         textarea {
             width: 100%;
             height: 150px;
-            background: #f4f4f4;
-            border: 2px solid #000;
+            background: #111;
+            color: #0f0; /* Classic CAD Green for syntax */
+            border: 1px solid #444;
             padding: 15px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 14px;
@@ -63,27 +67,32 @@
             align-items: center;
         }
         button {
-            background: #000;
-            color: #fff;
+            background: #fff;
+            color: #000;
             border: none;
-            padding: 15px 30px;
+            padding: 12px 25px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
         }
-        button:hover { background: #444; }
-        
-        /* LOGGING */
+        button:hover {
+            background: #ccc;
+        }
         .status-log {
             margin-top: 20px;
-            border: 1px solid #000;
-            padding: 15px;
-            background: #fafafa;
-            font-size: 0.9em;
-            height: 120px;
-            overflow-y: auto;
+            font-size: 0.85em;
+            color: #888;
+        }
+        footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            border-top: 1px solid #555;
+            padding-top: 15px;
+            color: #666;
         }
     </style>
 </head>
@@ -91,196 +100,183 @@
 
 <div class="master-block">
     <header>
-        <h1>WALLYCAD STUDIO</h1>
-        <div class="subtitle">LIVE RENDER & COORDINATE LOG [V1.0]</div>
+        <h1>WALLYCAD STUDIO [GUI]</h1>
+        <div class="subtitle">LIVE VIEWPORT WITH AUTO-EXTENTS SCALING (V1.3)</div>
     </header>
 
-    <div class="canvas-container">
-        <canvas id="viewport" width="840" height="400"></canvas>
-    </div>
+    <canvas id="wallyCanvas" width="860" height="400"></canvas>
 
     <div>
-        <label for="wallyInput"><strong>INPUT: WALLY PARAMETRIC PAYLOAD</strong></label>
-        <textarea id="wallyInput" placeholder="Enter Wally Elements here to render...&#10;&#10;Example:&#10;Wally Box 1,1 / 17,8.5&#10;Wally Circle 2.5,2.5 / 0.5"></textarea>
+        <label for="wallyInput" style="color:#aaa; font-weight:bold;">COMMAND LINE / PAYLOAD MATRIX:</label>
+        <textarea id="wallyInput" placeholder="Enter Wally Elements here to render...&#10;&#10;Example:&#10;Wally Line 0,50 / 50,0&#10;Wally Box 10,10 / 30,30&#10;Wally Circle 25,25 / 10"></textarea>
     </div>
 
     <div class="controls">
-        <button onclick="executeEngine()">RENDER TO VIEWPORT</button>
-        <span id="outputStatus" style="font-weight: bold; color: #555;">STATUS: WAITING FOR PAYLOAD</span>
+        <button onclick="renderViewport()">RENDER TO VIEWPORT (Z -> E)</button>
+        <span id="outputStatus" style="font-weight: bold; color: #aaa;">STATUS: STANDBY</span>
     </div>
 
-    <div class="status-log" id="coordLog">
-        <strong>COORDINATE LOG:</strong><br>
-        <span style="color:#666;">Matrix is empty.</span>
+    <div class="status-log" id="mathLog">
+        EXTENTS MATH: [ Waiting for geometry payload... ]
     </div>
+
+    <footer>
+        WALLY CAD ENGINE // LKA ENTERPRISE // ROOM 113
+    </footer>
 </div>
 
 <script>
     // ----------------------------------------------------
-    // THE ENGINE BRIDGE: SYNTAX TO VISUAL MATRIX
+    // 1. THE PARSER: TEXT TO RAW GEOMETRY
     // ----------------------------------------------------
-    let wallyMatrix = [];
-    const scale = 25; // 1 Wally Unit = 25 Pixels on screen
-
-    function executeEngine() {
-        const input = document.getElementById('wallyInput').value;
-        const lines = input.split('\n');
-        const logBox = document.getElementById('coordLog');
-        
-        // Wipe the previous matrix clean
-        wallyMatrix = [];
-        let logText = "<strong>COORDINATE LOG:</strong><br>";
-        let entityCount = 0;
+    function parsePayload(text) {
+        const lines = text.split('\n');
+        let elements = [];
 
         lines.forEach(line => {
             line = line.trim();
             if (!line || !line.startsWith("Wally")) return;
 
-            // 1. INTERPRET: LINE
             if (line.startsWith("Wally Line")) {
                 let coords = line.replace("Wally Line", "").trim().split("/");
                 if (coords.length === 2) {
                     let start = coords[0].split(",");
                     let end = coords[1].split(",");
-                    if (start.length === 2 && end.length === 2) {
-                        wallyMatrix.push({
-                            type: 'line',
-                            x1: parseFloat(start[0]),
-                            y1: parseFloat(start[1]),
-                            x2: parseFloat(end[0]),
-                            y2: parseFloat(end[1])
-                        });
-                        logText += `-> Extracted LINE: Start(${start[0]}, ${start[1]}), End(${end[0]}, ${end[1]})<br>`;
-                        entityCount++;
-                    }
+                    elements.push({ type: 'line', x1: parseFloat(start[0]), y1: parseFloat(start[1]), x2: parseFloat(end[0]), y2: parseFloat(end[1]) });
                 }
-            }
-            
-            // 2. INTERPRET: BOX
-            else if (line.startsWith("Wally Box")) {
+            } else if (line.startsWith("Wally Box")) {
                 let params = line.replace("Wally Box", "").trim().split("/");
                 if (params.length === 2) {
                     let origin = params[0].split(",");
                     let dims = params[1].split(",");
-                    if (origin.length === 2 && dims.length === 2) {
-                        wallyMatrix.push({
-                            type: 'box',
-                            x: parseFloat(origin[0]),
-                            y: parseFloat(origin[1]),
-                            w: parseFloat(dims[0]),
-                            h: parseFloat(dims[1])
-                        });
-                        logText += `-> Extracted BOX: Origin(${origin[0]}, ${origin[1]}), Span(${dims[0]}x, ${dims[1]}y)<br>`;
-                        entityCount++;
-                    }
+                    elements.push({ type: 'box', x: parseFloat(origin[0]), y: parseFloat(origin[1]), w: parseFloat(dims[0]), h: parseFloat(dims[1]) });
                 }
-            }
-            
-            // 3. INTERPRET: CIRCLE
-            else if (line.startsWith("Wally Circle")) {
+            } else if (line.startsWith("Wally Circle")) {
                 let params = line.replace("Wally Circle", "").trim().split("/");
                 if (params.length === 2) {
                     let center = params[0].split(",");
-                    let r = parseFloat(params[1].trim());
-                    if (center.length === 2 && !isNaN(r)) {
-                        wallyMatrix.push({
-                            type: 'circle',
-                            cx: parseFloat(center[0]),
-                            cy: parseFloat(center[1]),
-                            r: r
-                        });
-                        logText += `-> Extracted CIRCLE: Center(${center[0]}, ${center[1]}), Radius(${r})<br>`;
-                        entityCount++;
-                    }
+                    let r = parseFloat(params[1]);
+                    elements.push({ type: 'circle', cx: parseFloat(center[0]), cy: parseFloat(center[1]), r: r });
                 }
             }
         });
-
-        // Trigger the canvas render
-        renderWallyViewport();
-
-        // Update UI
-        if (entityCount > 0) {
-            logBox.innerHTML = logText;
-            document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${entityCount} ENTITIES RENDERED)`;
-            document.getElementById('outputStatus').style.color = "#388e3c";
-        } else {
-            logBox.innerHTML = "<strong>COORDINATE LOG:</strong><br><span style='color:#d32f2f;'>Error: No valid coordinates to return.</span>";
-            document.getElementById('outputStatus').innerText = "STATUS: ERROR (NO VALID WALLY SYNTAX FOUND)";
-            document.getElementById('outputStatus').style.color = "#d32f2f";
-        }
+        return elements;
     }
 
     // ----------------------------------------------------
-    // THE VIEWPORT RENDERING LOOP
+    // 2. THE SCOUT: ZOOM EXTENTS CALCULATOR (V1.3)
     // ----------------------------------------------------
-    function renderWallyViewport() {
-        const canvas = document.getElementById('viewport');
-        const ctx = canvas.getContext('2d');
-        const h = canvas.height;
+    function calculateExtents(elements, canvasWidth, canvasHeight) {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        // Find absolute boundaries
+        elements.forEach(el => {
+            if (el.type === 'line') {
+                minX = Math.min(minX, el.x1, el.x2);
+                maxX = Math.max(maxX, el.x1, el.x2);
+                minY = Math.min(minY, el.y1, el.y2);
+                maxY = Math.max(maxY, el.y1, el.y2);
+            } else if (el.type === 'box') {
+                minX = Math.min(minX, el.x);
+                maxX = Math.max(maxX, el.x + el.w);
+                minY = Math.min(minY, el.y);
+                maxY = Math.max(maxY, el.y + el.h);
+            } else if (el.type === 'circle') {
+                minX = Math.min(minX, el.cx - el.r);
+                maxX = Math.max(maxX, el.cx + el.r);
+                minY = Math.min(minY, el.cy - el.r);
+                maxY = Math.max(maxY, el.cy + el.r);
+            }
+        });
+
+        // Trap for empty payload
+        if (minX === Infinity) return null;
+
+        const geoWidth = maxX - minX;
+        const geoHeight = maxY - minY;
+
+        // Scale factor with 10% padding
+        const padding = 0.10;
+        const usableWidth = canvasWidth * (1 - padding);
+        const usableHeight = canvasHeight * (1 - padding);
         
-        // 1. Wipe the board clean
+        // Prevent divide by zero if geometry is a single point
+        const scaleX = usableWidth / (geoWidth || 1);
+        const scaleY = usableHeight / (geoHeight || 1);
+        const scale = Math.min(scaleX, scaleY);
+
+        // Center offsets
+        const actualWidth = geoWidth * scale;
+        const actualHeight = geoHeight * scale;
+        const offsetX = (canvasWidth - actualWidth) / 2;
+        const offsetY = (canvasHeight - actualHeight) / 2;
+
+        return { minX, minY, maxX, maxY, scale, offsetX, offsetY, geoWidth, geoHeight };
+    }
+
+    // ----------------------------------------------------
+    // 3. THE RENDERER: DRAWING THE MATRIX
+    // ----------------------------------------------------
+    function renderViewport() {
+        const input = document.getElementById('wallyInput').value;
+        const canvas = document.getElementById('wallyCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Clear the glass
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 2. Draw the Datum Grid (Faint Grey)
-        ctx.strokeStyle = "#333333";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let x = 0; x < canvas.width; x += scale) {
-            ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+        // Parse the text
+        const elements = parsePayload(input);
+        
+        if (elements.length === 0) {
+            document.getElementById('outputStatus').innerText = "STATUS: NO GEOMETRY DETECTED";
+            document.getElementById('outputStatus').style.color = "#d32f2f";
+            document.getElementById('mathLog').innerText = "EXTENTS MATH: [ Waiting for geometry payload... ]";
+            return;
         }
-        for (let y = 0; y < canvas.height; y += scale) {
-            ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
-        }
-        ctx.stroke();
 
-        // 3. Draw the Origin Axis (Green X/Y lines)
-        ctx.strokeStyle = "#1b5e20";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, h); ctx.lineTo(canvas.width, h); // X Axis
-        ctx.moveTo(0, 0); ctx.lineTo(0, h);            // Y Axis
-        ctx.stroke();
+        // Calculate Extents
+        const ext = calculateExtents(elements, canvas.width, canvas.height);
+        
+        if (!ext) return;
 
-        // 4. Render the active Wally Matrix (White Ink)
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        // Log the math for verification
+        document.getElementById('mathLog').innerText = `EXTENTS MATH: X[${ext.minX} to ${ext.maxX}] Y[${ext.minY} to ${ext.maxY}] | SCALE FACTOR: ${ext.scale.toFixed(4)}`;
+        document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${elements.length} ENTITIES RENDERED)`;
+        document.getElementById('outputStatus').style.color = "#0f0";
 
-        wallyMatrix.forEach(el => {
+        // Setup CAD Pen (White lines on Black canvas)
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+
+        // Mapping Functions (Cartesian to Screen + Scale + Center)
+        function getX(x) { return ext.offsetX + (x - ext.minX) * ext.scale; }
+        // Y is inverted: Highest Y maps to Lowest Screen Y
+        function getY(y) { return canvas.height - ext.offsetY - (y - ext.minY) * ext.scale; }
+
+        // Draw the Geometry
+        elements.forEach(el => {
             ctx.beginPath();
-            
             if (el.type === 'line') {
-                // Multiply by scale, and subtract from height to invert Y
-                ctx.moveTo(el.x1 * scale, h - (el.y1 * scale));
-                ctx.lineTo(el.x2 * scale, h - (el.y2 * scale));
-            } 
-            else if (el.type === 'box') {
-                // For rect: x, y (top-left inverted), width, height
-                ctx.rect(
-                    el.x * scale, 
-                    h - (el.y * scale) - (el.h * scale), 
-                    el.w * scale, 
-                    el.h * scale
-                );
-            } 
-            else if (el.type === 'circle') {
-                ctx.arc(
-                    el.cx * scale, 
-                    h - (el.cy * scale), 
-                    el.r * scale, 
-                    0, 2 * Math.PI
-                );
+                ctx.moveTo(getX(el.x1), getY(el.y1));
+                ctx.lineTo(getX(el.x2), getY(el.y2));
+            } else if (el.type === 'box') {
+                // For a rect, starting point is Top-Left in screen space, which is highest Y
+                let screenX = getX(el.x);
+                let screenY = getY(el.y + el.h);
+                let screenW = el.w * ext.scale;
+                let screenH = el.h * ext.scale;
+                ctx.rect(screenX, screenY, screenW, screenH);
+            } else if (el.type === 'circle') {
+                ctx.arc(getX(el.cx), getY(el.cy), el.r * ext.scale, 0, 2 * Math.PI);
             }
-            
             ctx.stroke();
         });
     }
 
-    // Render an empty grid on initial load
-    window.onload = function() {
-        renderWallyViewport();
-    };
+    // Auto-render on load if there's text
+    window.onload = renderViewport;
 </script>
-
 </body>
 </html>
