@@ -277,6 +277,31 @@
 
     // Auto-render on load if there's text
     window.onload = renderViewport;
+    // ----------------------------------------------------
+    // 4. THE HOTKEY LISTENER (ALT + E : ZOOM EXTENTS)
+    // ----------------------------------------------------
+    document.addEventListener('keydown', function(event) {
+        // Triggers on Alt + E (or Option + E on Mac)
+        if (event.altKey && (event.key === 'e' || event.key === 'E')) {
+            event.preventDefault(); // Prevents browser menu interference
+            
+            // Execute the render and Extents math
+            renderViewport();
+            
+            // Visual confirmation flash in the status bar
+            const statusEl = document.getElementById('outputStatus');
+            const originalText = statusEl.innerText;
+            const originalColor = statusEl.style.color;
+            
+            statusEl.innerText = "STATUS: HOTKEY [ALT+E] FIRED";
+            statusEl.style.color = "#0ff"; // Cyan flash for hotkey trigger
+            
+            setTimeout(() => { 
+                statusEl.innerText = originalText; 
+                statusEl.style.color = originalColor;
+            }, 800);
+        }
+    });
 </script>
 </body>
 </html>
