@@ -302,6 +302,21 @@
             }, 800);
         }
     });
+    // THE ZE HOTKEY LISTENER (Standard CAD Protocol)
+let lastKey = '';
+window.addEventListener('keydown', function(event) {
+    // Ignore keystrokes if the user is typing inside the textarea
+    if (document.activeElement.id === 'wallyInput') return;
+
+    const key = event.key.toUpperCase();
+    
+    if (lastKey === 'Z' && key === 'E') {
+        renderViewport(); // Fire the Extents Math
+        lastKey = ''; // Reset
+    } else {
+        lastKey = key;
+    }
+});
 </script>
 </body>
 </html>
