@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WallyCAD Studio | Live Viewport</title>
+    <title>WallyCAD Studio | Live Viewport V1.4</title>
     <style>
         /* WALLY ENGINE UI STYLES */
         body {
-            background-color: #1a1a1a; /* Dark mode for the drafting studio */
+            background-color: #1a1a1a; 
             font-family: 'Courier New', Courier, monospace;
             color: #fff;
             margin: 0;
@@ -44,15 +44,15 @@
             background-color: #000;
             border: 1px solid #444;
             width: 100%;
-            height: 400px; /* Fixed height for the viewport */
+            height: 400px; 
             cursor: crosshair;
             margin-bottom: 20px;
         }
         textarea {
             width: 100%;
-            height: 150px;
+            height: 200px;
             background: #111;
-            color: #0f0; /* Classic CAD Green for syntax */
+            color: #0f0; 
             border: 1px solid #444;
             padding: 15px;
             font-family: 'Courier New', Courier, monospace;
@@ -101,19 +101,19 @@
 <div class="master-block">
     <header>
         <h1>WALLYCAD STUDIO [GUI]</h1>
-        <div class="subtitle">LIVE VIEWPORT WITH AUTO-EXTENTS SCALING (V1.3)</div>
+        <div class="subtitle">LIVE VIEWPORT WITH ARCHITECTURAL FRAMING (V1.4)</div>
     </header>
 
     <canvas id="wallyCanvas" width="860" height="400"></canvas>
 
     <div>
         <label for="wallyInput" style="color:#aaa; font-weight:bold;">COMMAND LINE / PAYLOAD MATRIX:</label>
-        <textarea id="wallyInput" placeholder="Enter Wally Elements here to render...&#10;&#10;Example:&#10;Wally Line 0,50 / 50,0&#10;Wally Box 10,10 / 30,30&#10;Wally Circle 25,25 / 10"></textarea>
+        <textarea id="wallyInput" placeholder="Enter Wally Elements here...&#10;&#10;Examples:&#10;Wally Line 0,50 / 50,0&#10;Wally Box 10,10 / 30,30&#10;Wally Circle 25,25 / 10&#10;Wally Wall 0,0 / 100,0 / 6"></textarea>
     </div>
 
     <div class="controls">
-        <button onclick="renderViewport()">RENDER TO VIEWPORT (Z -> E)</button>
-        <span id="outputStatus" style="font-weight: bold; color: #aaa;">STATUS: STANDBY</span>
+        <button onclick="renderViewport()">RENDER TO VIEWPORT</button>
+        <span id="outputStatus" style="font-weight: bold; color: #aaa;">STATUS: STANDBY (HOTKEY: Z -> E)</span>
     </div>
 
     <div class="status-log" id="mathLog">
@@ -126,6 +126,24 @@
 </div>
 
 <script>
+    // ----------------------------------------------------
+    // 0. THE HOTKEY LISTENER (Z -> E)
+    // ----------------------------------------------------
+    let lastKey = '';
+    window.addEventListener('keydown', function(event) {
+        // Ignore keystrokes if the user is typing inside the text box
+        if (document.activeElement.id === 'wallyInput') return;
+
+        const key = event.key.toUpperCase();
+        
+        if (lastKey === 'Z' && key === 'E') {
+            renderViewport(); 
+            lastKey = ''; 
+        } else {
+            lastKey = key;
+        }
+    });
+
     // ----------------------------------------------------
     // 1. THE PARSER: TEXT TO RAW GEOMETRY
     // ----------------------------------------------------
@@ -158,19 +176,48 @@
                     let r = parseFloat(params[1]);
                     elements.push({ type: 'circle', cx: parseFloat(center[0]), cy: parseFloat(center[1]), r: r });
                 }
+            } 
+            // NEW MODULE: WALLY WALL (V1.4)
+            else if (line.startsWith("Wally Wall")) {
+                let params = line.replace("Wally Wall", "").trim().split("/");
+                if (params.length === 3) {
+                    let start = params[0].split(",");
+                    let end = params[1].split(",");
+                    let t = parseFloat(params[2]);
+                    
+                    let x1 = parseFloat(start[0]);
+                    let y1 = parseFloat(start[1]);
+                    let x2 = parseFloat(end[0]);
+                    let y2 = parseFloat(end[1]);
+
+                    // Trigonometry to calculate perpendicular offsets
+                    let angle = Math.atan2(y2 - y1, x2 - x1);
+                    let perp = angle + (Math.PI / 2);
+                    let halfT = t / 2;
+                    let dx = halfT * Math.cos(perp);
+                    let dy = halfT * Math.sin(perp);
+
+                    // The 4 absolute corners of the wall footprint
+                    let pts = [
+                        {x: x1 + dx, y: y1 + dy},
+                        {x: x1 - dx, y: y1 - dy},
+                        {x: x2 - dx, y: y2 - dy},
+                        {x: x2 + dx, y: y2 + dy}
+                    ];
+                    elements.push({ type: 'wall', pts: pts });
+                }
             }
         });
         return elements;
     }
 
     // ----------------------------------------------------
-    // 2. THE SCOUT: ZOOM EXTENTS CALCULATOR (V1.3)
+    // 2. THE SCOUT: ZOOM EXTENTS CALCULATOR (V1.4)
     // ----------------------------------------------------
     function calculateExtents(elements, canvasWidth, canvasHeight) {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
-        // Find absolute boundaries
         elements.forEach(el => {
             if (el.type === 'line') {
                 minX = Math.min(minX, el.x1, el.x2);
@@ -187,26 +234,29 @@
                 maxX = Math.max(maxX, el.cx + el.r);
                 minY = Math.min(minY, el.cy - el.r);
                 maxY = Math.max(maxY, el.cy + el.r);
+            } else if (el.type === 'wall') {
+                el.pts.forEach(p => {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                });
             }
         });
 
-        // Trap for empty payload
         if (minX === Infinity) return null;
 
         const geoWidth = maxX - minX;
         const geoHeight = maxY - minY;
 
-        // Scale factor with 10% padding
         const padding = 0.10;
         const usableWidth = canvasWidth * (1 - padding);
         const usableHeight = canvasHeight * (1 - padding);
         
-        // Prevent divide by zero if geometry is a single point
         const scaleX = usableWidth / (geoWidth || 1);
         const scaleY = usableHeight / (geoHeight || 1);
         const scale = Math.min(scaleX, scaleY);
 
-        // Center offsets
         const actualWidth = geoWidth * scale;
         const actualHeight = geoHeight * scale;
         const offsetX = (canvasWidth - actualWidth) / 2;
@@ -223,10 +273,8 @@
         const canvas = document.getElementById('wallyCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Clear the glass
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Parse the text
         const elements = parsePayload(input);
         
         if (elements.length === 0) {
@@ -236,33 +284,26 @@
             return;
         }
 
-        // Calculate Extents
         const ext = calculateExtents(elements, canvas.width, canvas.height);
         
         if (!ext) return;
 
-        // Log the math for verification
-        document.getElementById('mathLog').innerText = `EXTENTS MATH: X[${ext.minX} to ${ext.maxX}] Y[${ext.minY} to ${ext.maxY}] | SCALE FACTOR: ${ext.scale.toFixed(4)}`;
+        document.getElementById('mathLog').innerText = `EXTENTS MATH: X[${ext.minX.toFixed(2)} to ${ext.maxX.toFixed(2)}] Y[${ext.minY.toFixed(2)} to ${ext.maxY.toFixed(2)}] | SCALE FACTOR: ${ext.scale.toFixed(4)}`;
         document.getElementById('outputStatus').innerText = `STATUS: SUCCESS (${elements.length} ENTITIES RENDERED)`;
         document.getElementById('outputStatus').style.color = "#0f0";
 
-        // Setup CAD Pen (White lines on Black canvas)
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
 
-        // Mapping Functions (Cartesian to Screen + Scale + Center)
         function getX(x) { return ext.offsetX + (x - ext.minX) * ext.scale; }
-        // Y is inverted: Highest Y maps to Lowest Screen Y
         function getY(y) { return canvas.height - ext.offsetY - (y - ext.minY) * ext.scale; }
 
-        // Draw the Geometry
         elements.forEach(el => {
             ctx.beginPath();
             if (el.type === 'line') {
                 ctx.moveTo(getX(el.x1), getY(el.y1));
                 ctx.lineTo(getX(el.x2), getY(el.y2));
             } else if (el.type === 'box') {
-                // For a rect, starting point is Top-Left in screen space, which is highest Y
                 let screenX = getX(el.x);
                 let screenY = getY(el.y + el.h);
                 let screenW = el.w * ext.scale;
@@ -270,53 +311,18 @@
                 ctx.rect(screenX, screenY, screenW, screenH);
             } else if (el.type === 'circle') {
                 ctx.arc(getX(el.cx), getY(el.cy), el.r * ext.scale, 0, 2 * Math.PI);
+            } else if (el.type === 'wall') {
+                ctx.moveTo(getX(el.pts[0].x), getY(el.pts[0].y));
+                ctx.lineTo(getX(el.pts[1].x), getY(el.pts[1].y));
+                ctx.lineTo(getX(el.pts[2].x), getY(el.pts[2].y));
+                ctx.lineTo(getX(el.pts[3].x), getY(el.pts[3].y));
+                ctx.closePath();
             }
             ctx.stroke();
         });
     }
 
-    // Auto-render on load if there's text
     window.onload = renderViewport;
-    // ----------------------------------------------------
-    // 4. THE HOTKEY LISTENER (ALT + E : ZOOM EXTENTS)
-    // ----------------------------------------------------
-    document.addEventListener('keydown', function(event) {
-        // Triggers on Alt + E (or Option + E on Mac)
-        if (event.altKey && (event.key === 'e' || event.key === 'E')) {
-            event.preventDefault(); // Prevents browser menu interference
-            
-            // Execute the render and Extents math
-            renderViewport();
-            
-            // Visual confirmation flash in the status bar
-            const statusEl = document.getElementById('outputStatus');
-            const originalText = statusEl.innerText;
-            const originalColor = statusEl.style.color;
-            
-            statusEl.innerText = "STATUS: HOTKEY [ALT+E] FIRED";
-            statusEl.style.color = "#0ff"; // Cyan flash for hotkey trigger
-            
-            setTimeout(() => { 
-                statusEl.innerText = originalText; 
-                statusEl.style.color = originalColor;
-            }, 800);
-        }
-    });
-    // THE ZE HOTKEY LISTENER (Standard CAD Protocol)
-let lastKey = '';
-window.addEventListener('keydown', function(event) {
-    // Ignore keystrokes if the user is typing inside the textarea
-    if (document.activeElement.id === 'wallyInput') return;
-
-    const key = event.key.toUpperCase();
-    
-    if (lastKey === 'Z' && key === 'E') {
-        renderViewport(); // Fire the Extents Math
-        lastKey = ''; // Reset
-    } else {
-        lastKey = key;
-    }
-});
 </script>
 </body>
 </html>
