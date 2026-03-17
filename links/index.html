@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill's Dashboard</title>
+    <style>
+        :root {
+            --bg-color: cyan;
+            --border-red: #ff0000;
+            --btn-khaki: #f0e68c;
+            --btn-salmon: #fa8072;
+            --btn-yellow: #ffff00;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* The Grid Container */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 85px); /* 4 columns */
+            gap: 10px;
+            justify-content: center;
+            background: var(--border-red);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Responsive: Drop to 2 columns on small phones */
+        @media (max-width: 400px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 85px); }
+        }
+
+        /* Individual Tiles */
+        .tile {
+            width: 85px;
+            background: white;
+            text-align: center;
+            font-size: 12px;
+            padding-top: 5px;
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.1s;
+        }
+
+        .tile:hover { transform: scale(1.05); background: #00ffff; }
+        .tile img { width: 80px; height: 80px; display: block; margin: 5px auto; }
+        
+        /* Color Classes */
+        .khaki { background-color: var(--btn-khaki); }
+        .salmon { background-color: var(--btn-salmon); }
+        .yellow { background-color: var(--btn-yellow); }
+
+        /* Secret Section - Hidden by default */
+        .secret-tile { display: none; }
+
+        .login-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-grid" id="mainGrid">
+        <div class="tile khaki">Projects<a href="#projects"><img src="dnarw.jpg" alt="P"></a></div>
+        <div class="tile khaki">Stair<a href="https://www.desmos.com/calculator/sp4vaboocu"><img src="https://btlsp2000.tripod.com/b/0-draw/stair.png" alt="S"></a></div>
+        <div class="tile khaki">Array<a href="#" onclick="runArry()"><img src="arraydesmos.png" alt="A"></a></div>
+        <div class="tile khaki">3-R Kick<a href="https://www.desmos.com/calculator/x6tjbdslog"><img src="railkick.png" alt="K"></a></div>
+
+        <div class="tile">Pool<a href="https://trimet.org/home/"><img src="trimettt.png" alt="T"></a></div>
+        <div class="tile yellow">Calc<a href="https://btlsp2000.tripod.com/b/calc.html"><img src="https://btlsp2000.tripod.com/portfolio/pi.png" alt="C"></a></div>
+        <div class="tile yellow">GT<a href="https://btlsp2000.tripod.com/bcards/0-card-gt.html"><img src="https://btlsp2000.tripod.com/portfolio/gt7.png" alt="G"></a></div>
+        <div class="tile salmon">Stand<a href="https://photos.app.goo.gl/3MrYZDqAHHJmmYto7"><img src="otherstand.jpg" alt="S"></a></div>
+
+        <div class="tile salmon secret-tile">Aubrie<a href="#"><img src="http://btlsp800.tripod.com/portfolio/heel.png" alt="A"></a></div>
+        <div class="tile salmon secret-tile">Vegas<a href="#"><img src="http://btlsp800.tripod.com/portfolio/ace.png" alt="V"></a></div>
+    </div>
+
+    <button class="login-btn" onclick="handleLogin()">CLASSIFIED</button>
+
+    <script>
+        function handleLogin() {
+            const user = prompt("Username:").toLowerCase();
+            const pass = prompt("Password:").toLowerCase();
+
+            if (user === "bill" && pass === "hell") {
+                const secrets = document.querySelectorAll('.secret-tile');
+                secrets.forEach(tile => tile.style.display = 'block');
+                alert("Access Granted, Bill.");
+            } else {
+                alert("Invalid Login!");
+            }
+        }
+
+        function runArry() {
+            const ltrarry1 = "abcxdefghijklcxnopqrstuwxy";
+            console.log("Array Split:", ltrarry1.split(""));
+        }
+    </script>
+</body>
+</html>
