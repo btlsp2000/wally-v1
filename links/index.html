@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bill's Dashboard</title>
+    <title>Bill's Master Dashboard</title>
     <style>
         :root {
             --bg-color: cyan;
@@ -11,10 +11,18 @@
             --btn-khaki: #f0e68c;
             --btn-salmon: #fa8072;
             --btn-yellow: #ffff00;
+            --text-color: black;
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --border-red: #800000;
+            --text-color: #ffffff;
         }
 
         body {
             background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
@@ -23,92 +31,140 @@
             align-items: center;
         }
 
-        /* The Grid Container */
+        .search-container { margin-bottom: 20px; }
+        .search-bar { padding: 10px; width: 250px; border-radius: 20px; border: 1px solid #ccc; }
+
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(4, 85px); /* 4 columns */
-            gap: 10px;
+            grid-template-columns: repeat(auto-fit, 85px);
+            gap: 12px;
             justify-content: center;
             background: var(--border-red);
-            padding: 10px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
-        /* Responsive: Drop to 2 columns on small phones */
-        @media (max-width: 400px) {
-            .dashboard-grid { grid-template-columns: repeat(2, 85px); }
-        }
-
-        /* Individual Tiles */
         .tile {
             width: 85px;
             background: white;
+            color: black;
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             padding-top: 5px;
             border-radius: 4px;
             overflow: hidden;
             transition: transform 0.1s;
         }
 
+        body.dark-mode .tile { background: #333; color: white; }
+
         .tile:hover { transform: scale(1.05); background: #00ffff; }
-        .tile img { width: 80px; height: 80px; display: block; margin: 5px auto; }
+        .tile img { width: 75px; height: 75px; display: block; margin: 5px auto; border: 1px solid #eee; }
         
-        /* Color Classes */
         .khaki { background-color: var(--btn-khaki); }
         .salmon { background-color: var(--btn-salmon); }
         .yellow { background-color: var(--btn-yellow); }
-
-        /* Secret Section - Hidden by default */
         .secret-tile { display: none; }
 
-        .login-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: white;
-            border: 2px solid black;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        button { padding: 8px 15px; cursor: pointer; font-weight: bold; border: 2px solid black; }
     </style>
 </head>
-<body>
+<body onload="init()">
+
+    <div class="search-container">
+        <form action="https://www.google.com/search" method="get" target="_blank">
+            <input type="text" name="q" class="search-bar" placeholder="Search Google...">
+        </form>
+    </div>
 
     <div class="dashboard-grid" id="mainGrid">
         <div class="tile khaki">Projects<a href="#projects"><img src="dnarw.jpg" alt="P"></a></div>
         <div class="tile khaki">Stair<a href="https://www.desmos.com/calculator/sp4vaboocu"><img src="https://btlsp2000.tripod.com/b/0-draw/stair.png" alt="S"></a></div>
-        <div class="tile khaki">Array<a href="#" onclick="runArry()"><img src="arraydesmos.png" alt="A"></a></div>
         <div class="tile khaki">3-R Kick<a href="https://www.desmos.com/calculator/x6tjbdslog"><img src="railkick.png" alt="K"></a></div>
+        
+        <div class="tile yellow" id="clockTile">Time<div id="liveClock" style="font-size: 14px; font-weight: bold; margin-top: 25px;">00:00:00</div></div>
 
-        <div class="tile">Pool<a href="https://trimet.org/home/"><img src="trimettt.png" alt="T"></a></div>
-        <div class="tile yellow">Calc<a href="https://btlsp2000.tripod.com/b/calc.html"><img src="https://btlsp2000.tripod.com/portfolio/pi.png" alt="C"></a></div>
+        <div class="tile khaki">MCL Central<a href="https://multcolib.org/library-location/central"><img src="https://via.placeholder.com/80?text=MCL" alt="M"></a></div>
+        <div class="tile khaki">Pettygrove<a href="https://multcolib.org/library-location/northwest"><img src="https://via.placeholder.com/80?text=NW" alt="N"></a></div>
+        <div class="tile khaki">Bethel<a href="https://www.eugene-or.gov/435/Bethel-Branch"><img src="https://via.placeholder.com/80?text=BTH" alt="B"></a></div>
+
         <div class="tile yellow">GT<a href="https://btlsp2000.tripod.com/bcards/0-card-gt.html"><img src="https://btlsp2000.tripod.com/portfolio/gt7.png" alt="G"></a></div>
-        <div class="tile salmon">Stand<a href="https://photos.app.goo.gl/3MrYZDqAHHJmmYto7"><img src="otherstand.jpg" alt="S"></a></div>
-
+        
         <div class="tile salmon secret-tile">Aubrie<a href="#"><img src="http://btlsp800.tripod.com/portfolio/heel.png" alt="A"></a></div>
         <div class="tile salmon secret-tile">Vegas<a href="#"><img src="http://btlsp800.tripod.com/portfolio/ace.png" alt="V"></a></div>
     </div>
 
-    <button class="login-btn" onclick="handleLogin()">CLASSIFIED</button>
+    <div style="width: 300px; margin-top: 15px;">
+        <a class="weatherwidget-io" href="https://weatherwidget.io/forecasts/portland/" data-label_1="PORTLAND" data-label_2="WEATHER" data-theme="pure">PORTLAND</a>
+    </div>
+
+    <div class="controls">
+        <button class="login-btn" onclick="handleLogin()">CLASSIFIED</button>
+        <button onclick="document.body.classList.toggle('dark-mode')">🌙 THEME</button>
+        <button onclick="addNewTile()">+ TILE</button>
+    </div>
 
     <script>
+        function init() {
+            startClock();
+            if (localStorage.getItem("isLoggedIn") === "true") showSecrets();
+            const savedTiles = JSON.parse(localStorage.getItem("customTiles") || "[]");
+            savedTiles.forEach(renderTile);
+        }
+
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('liveClock').innerText = now.toLocaleTimeString([], { hour12: false });
+            }, 1000);
+        }
+
         function handleLogin() {
+            if (localStorage.getItem("isLoggedIn") === "true") {
+                handleLogout();
+                return;
+            }
             const user = prompt("Username:").toLowerCase();
             const pass = prompt("Password:").toLowerCase();
-
             if (user === "bill" && pass === "hell") {
-                const secrets = document.querySelectorAll('.secret-tile');
-                secrets.forEach(tile => tile.style.display = 'block');
-                alert("Access Granted, Bill.");
-            } else {
-                alert("Invalid Login!");
+                localStorage.setItem("isLoggedIn", "true");
+                showSecrets();
+            } else { alert("Access Denied"); }
+        }
+
+        function showSecrets() {
+            document.querySelectorAll('.secret-tile').forEach(t => t.style.display = 'block');
+            document.querySelector('.login-btn').textContent = "LOCK";
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("isLoggedIn");
+            document.querySelectorAll('.secret-tile').forEach(t => t.style.display = 'none');
+            document.querySelector('.login-btn').textContent = "CLASSIFIED";
+        }
+
+        function addNewTile() {
+            const name = prompt("Name:");
+            const url = prompt("URL:");
+            if (name && url) {
+                const tile = { name, url };
+                let saved = JSON.parse(localStorage.getItem("customTiles") || "[]");
+                saved.push(tile);
+                localStorage.setItem("customTiles", JSON.stringify(saved));
+                renderTile(tile);
             }
         }
 
-        function runArry() {
-            const ltrarry1 = "abcxdefghijklcxnopqrstuwxy";
-            console.log("Array Split:", ltrarry1.split(""));
+        function renderTile(t) {
+            const div = document.createElement('div');
+            div.className = 'tile';
+            div.innerHTML = `${t.name}<a href="${t.url}"><img src="https://via.placeholder.com/80?text=Link"></a>`;
+            document.getElementById('mainGrid').appendChild(div);
         }
     </script>
+    <script async src="https://weatherwidget.io/js/widget.min.js"></script>
 </body>
 </html>
