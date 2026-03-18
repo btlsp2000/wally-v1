@@ -4,169 +4,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAL Studio - Restored Ratios</title>
+    <title>Pro Workspace with Export</title>
     <style>
-        :root { 
-            --accent: #6c5ce7; 
-            --bg: #f1f2f6; 
-            --text: #2f3542; 
-            --sidebar-bg: #e1e2e6; 
-            --divider-line: #adb5bd;
-        }
-        [data-theme="dark"] { 
-            --bg: #1e1e1e; 
-            --text: #ccc; 
-            --sidebar-bg: #2d2d2d; 
-            --divider-line: #444;
-        }
-
-        body { margin: 0; height: 100vh; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-
-        header { padding: 10px 20px; background: #222; color: #fff; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        :root { --accent: #6c5ce7; --bg: #f8f9fa; }
+        body { margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; }
         
-        .main-layout { display: flex; flex: 1; width: 100%; overflow: hidden; }
+        header { 
+            padding: 10px 20px; background: #2d3436; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+        }
 
-        /* --- SIDEBAR --- */
-        .sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; padding: 15px; }
-        .search-box { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; background: var(--bg); color: var(--text); }
-        .scroll-area { flex: 1; overflow-y: auto; }
-        .snippet-item { padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 5px; cursor: pointer; font-size: 12px; }
-        .snippet-item:hover { background: var(--accent); color: white; }
+        .btn-group button {
+            padding: 6px 12px; margin-left: 5px; cursor: pointer;
+            border-radius: 4px; border: none; background: #636e72; color: white;
+        }
 
-        /* --- THE RESTORED BREAK LINE --- */
-        .container { display: flex; flex: 1; position: relative; }
-        .pane { flex: 0 0 50%; padding: 25px; box-sizing: border-box; overflow-y: auto; background: var(--bg); }
+        .container { display: flex; flex: 1; width: 100%; overflow: hidden; }
         
-        .resizer { 
-            width: 8px; 
-            cursor: col-resize; 
-            background: transparent; 
-            display: flex; 
-            justify-content: center;
-            transition: 0.2s;
-        }
-        /* The actual visible line from your sketch */
-        .resizer::after {
-            content: "";
-            width: 2px;
-            height: 100%;
-            background: var(--divider-line);
-        }
-        .resizer:hover::after, .resizer.active::after {
-            background: var(--accent);
-            width: 4px;
-        }
-
-        .content-area { outline: none; min-height: 400px; white-space: pre-wrap; font-family: monospace; }
-        .btn-group button { padding: 6px 12px; margin-left: 5px; cursor: pointer; border: none; background: #444; color: white; border-radius: 4px; font-weight: 600; }
+        /* Editable Panes */
+        .pane { flex: 0 0 50%; padding: 25px; box-sizing: border-box; overflow-y: auto; background: white; }
+        .pane-right { flex: 1; background: #fdfdfd; border-left: 1px solid #eee; }
         
-        .smooth { transition: flex-basis 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .resizer { width: 8px; cursor: col-resize; background: #dfe6e9; }
+        .resizer:hover { background: var(--accent); }
+
+        /* Make content areas editable for the user */
+        .content-area { outline: none; min-height: 200px; line-height: 1.6; }
+        
+        h2 { margin-top: 0; color: var(--accent); }
     </style>
 </head>
-<body data-theme="light">
+<body>
 
-    <header>
-        <div><strong>HAL Studio 6.1</strong></div>
-        <div class="btn-group">
-            <button onclick="HAL.setRatio(60)">3:2</button>
-            <button onclick="HAL.setRatio(40)">2:3</button>
-            <button onclick="HAL.toggleTheme()">&#127763;</button>
-            <button onclick="HAL.download()" style="background: var(--accent);">&#128190; Save</button>
-        </div>
-    </header>
+<header>
+    <strong>Workspace v3.0</strong>
+    <div class="btn-group">
+        <button onclick="setRatio(60)">3:2</button>
+        <button onclick="setRatio(40)">2:3</button>
+        <button onclick="downloadContent()" style="background: var(--accent);">&#128190; Download .txt</button>
+    </div>
+</header>
 
-    <div class="main-layout">
-        <aside class="sidebar">
-            <input type="text" class="search-box" placeholder="Filter snippets..." onkeyup="HAL.filter(this.value)">
-            <div class="scroll-area" id="snippetList">
-                <div class="snippet-item" onclick="HAL.insert('<h3>Title</h3>')">Heading</div>
-                <div class="snippet-item" onclick="HAL.insert('<p>Loreum Ipsum...</p>')">Text Block</div>
-            </div>
-        </aside>
-
-        <div class="container" id="mainContainer">
-            <div class="pane" id="paneA">
-                <div id="inputA" class="content-area" contenteditable="true" onfocus="HAL.activePane='inputA'">Pane A content...</div>
-            </div>
-            <div class="resizer" id="dragHandle"></div>
-            <div class="pane" id="paneB">
-                <div id="inputB" class="content-area" contenteditable="true" onfocus="HAL.activePane='inputB'">Pane B content...</div>
-            </div>
+<div class="container" id="mainContainer">
+    <div class="pane pane-left" id="leftPane">
+        <h2>Pane A (Master)</h2>
+        <div id="textA" class="content-area" contenteditable="true">
+            Type your list or master notes here...
         </div>
     </div>
+    <div class="resizer" id="dragMe"></div>
+    <div class="pane pane-right" id="rightPane">
+        <h2>Pane B (Details)</h2>
+        <div id="textB" class="content-area" contenteditable="true">
+            Type your detailed analysis or preview content here...
+        </div>
+    </div>
+</div>
 
 <script>
-const HAL = {
-    activePane: 'inputA',
-    
-    // RESTORED RATIO LOGIC
-    setRatio(p) {
-        const paneA = document.getElementById('paneA');
-        paneA.classList.add('smooth');
-        paneA.style.flexBasis = p + "%";
-        setTimeout(() => paneA.classList.remove('smooth'), 310);
-    },
+    const leftPane = document.getElementById('leftPane');
+    const resizer = document.getElementById('dragMe');
+    const container = document.getElementById('mainContainer');
 
-    insert(html) {
-        document.getElementById(this.activePane).focus();
-        document.execCommand('insertHTML', false, html);
-    },
+    // --- DOWNLOAD LOGIC ---
+    function downloadContent() {
+        const contentA = document.getElementById('textA').innerText;
+        const contentB = document.getElementById('textB').innerText;
+        
+        const fullText = `WORKSPACE EXPORT\n${'='.repeat(20)}\n\nPANE A CONTENT:\n${contentA}\n\n${'='.repeat(20)}\n\nPANE B CONTENT:\n${contentB}`;
+        
+        const blob = new Blob([fullText], { type: 'text/plain' });
+        const anchor = document.createElement('a');
+        anchor.download = 'workspace-export.txt';
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.click();
+        window.URL.revokeObjectURL(anchor.href);
+    }
 
-    toggleTheme() {
-        const theme = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-        document.body.setAttribute('data-theme', theme);
-    },
+    // --- RATIO & DRAG LOGIC ---
+    function setRatio(p) {
+        leftPane.style.flexBasis = p + "%";
+    }
 
-    filter(query) {
-        const q = query.toLowerCase();
-        document.querySelectorAll('.snippet-item').forEach(item => {
-            item.style.display = item.innerText.toLowerCase().includes(q) ? 'block' : 'none';
-        });
-    },
-
-    download() {
-        const text = `PANE A:\n${document.getElementById('inputA').innerText}\n\nPANE B:\n${document.getElementById('inputB').innerText}`;
-        const blob = new Blob([text], { type: 'text/plain' });
-        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'HAL_Export.txt' });
-        a.click();
-    },
-
-    attachEvents() {
-        const handle = document.getElementById('dragHandle');
-        const container = document.getElementById('mainContainer');
-        const paneA = document.getElementById('paneA');
+    resizer.addEventListener('mousedown', (e) => {
+        const startX = e.clientX;
+        const startWidth = leftPane.getBoundingClientRect().width;
+        const totalWidth = container.offsetWidth;
 
         const onMove = (e) => {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let p = (clientX - container.getBoundingClientRect().left) / container.offsetWidth * 100;
-            
-            // RESTORED SNAP TO CENTER
-            if (p > 48 && p < 52) p = 50;
-            
-            paneA.style.flexBasis = Math.max(10, Math.min(90, p)) + "%";
+            let p = ((startWidth + (e.clientX - startX)) / totalWidth) * 100;
+            leftPane.style.flexBasis = Math.max(10, Math.min(90, p)) + "%";
         };
 
-        const stopDrag = () => {
-            handle.classList.remove('active');
+        const onUp = () => {
             window.removeEventListener('mousemove', onMove);
-            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('mouseup', onUp);
         };
 
-        handle.addEventListener('mousedown', () => {
-            handle.classList.add('active');
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', stopDrag, {once:true});
-        });
-
-        handle.addEventListener('touchstart', () => {
-            handle.classList.add('active');
-            window.addEventListener('touchmove', onMove, {passive:false});
-            window.addEventListener('touchend', stopDrag, {once:true});
-        });
-    }
-};
-
-HAL.attachEvents();
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    });
 </script>
 </body>
 </html>
