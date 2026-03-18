@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="iso-8859-1">
+    <title>QuickClick Glass Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* 1. Background Image Layer */
+        body { 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            color: #fff; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 2. Glassmorphism Container */
+        #mo { 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-size: 18px; 
+            width: 340px; 
+            height: 150px; 
+            padding: 15px;
+            color: white;
+            outline: none;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* 3. Transparent Button Styling */
+        .keyb { margin: 20px auto; border-spacing: 8px; }
+        
+        .button, .button2 { 
+            border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            font-size: 22px; 
+            cursor: pointer; 
+            width: 60px; 
+            height: 60px; 
+            color: white;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        /* Subtle color tinting via RGBA */
+        .button { background: rgba(249, 231, 159, 0.2); } /* Yellow tint */
+        .button2 { background: rgba(0, 255, 255, 0.2); }  /* Cyan tint */
+
+        .button:hover, .button2:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .button:active { transform: translateY(1px); }
+
+        .wide-btn {
+            width: 150px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>QuickClick <span style="font-weight:100;">Glass</span></h2>
+
+    <textarea id="mo" placeholder="Start typing..."></textarea>
+
+    <table class="keyb">
+        <tr>
+            <td><button class="button" onclick="typeKey('c')">c</button></td>
+            <td><button class="button2" onclick="typeKey('s')">s</button></td>
+            <td><button class="button2" onclick="typeKey('e')">e</button></td>
+            <td><button class="button2" onclick="typeKey('n')">n</button></td>
+            <td><button class="button" onclick="typeKey('w')">w</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="typeKey('d')">d</button></td>
+            <td><button class="button2" onclick="typeKey('h')">h</button></td>
+            <td><button class="button2" onclick="typeKey('o')">o</button></td>
+            <td><button class="button2" onclick="typeKey('r')">r</button></td>
+            <td><button class="button" onclick="typeKey('y')">y</button></td>
+        </tr>
+    </table>
+
+    <div style="margin-bottom: 20px;">
+        <button class="wide-btn" onclick="typeKey(' ')">SPACE</button>
+        <button class="wide-btn" onclick="typeKey('\n')">ENTER</button>
+    </div>
+
+    <div>
+        <button class="wide-btn" style="width:80px; background:rgba(46, 204, 113, 0.3);" onclick="copyText()">COPY</button>
+        <button class="wide-btn" style="width:80px; background:rgba(231, 76, 60, 0.3);" onclick="location.reload()">RESET</button>
+    </div>
+
+    <script>
+        function typeKey(char) {
+            const el = document.getElementById("mo");
+            el.value += char;
+            el.scrollTop = el.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function copyText() {
+            const el = document.getElementById("mo");
+            el.select();
+            navigator.clipboard.writeText(el.value);
+            alert("Copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
+
+
