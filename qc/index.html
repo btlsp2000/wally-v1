@@ -1,127 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="iso-8859-1">
-    <title>QuickClick Glass Edition</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QC Quick Click - LKA</title>
     <style>
-        /* 1. Background Image Layer */
-        body { 
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                        url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80');
-            background-size: cover;
-            background-attachment: fixed;
-            color: #fff; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            text-align: center;
-            margin: 0;
-            padding: 20px;
+        /* --- Default Theme (Dark) --- */
+        :root {
+            --bg-color: #000;
+            --text-color: #fff;
+            --stats-color: #85c1e9;
+            --textarea-bg: #fff;
+            --textarea-txt: #000;
+            --btn-std: #f9e79f;
+            --btn-prime: cyan;
+            --btn-func: #fff;
+            --footer-border: #333;
         }
 
-        /* 2. Glassmorphism Container */
-        #mo { 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            font-size: 18px; 
-            width: 340px; 
-            height: 150px; 
-            padding: 15px;
-            color: white;
-            outline: none;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        /* --- Light Mode Overrides --- */
+        body.light-mode {
+            --bg-color: #f4f4f9;
+            --text-color: #000;
+            --stats-color: #2980b9;
+            --textarea-bg: #fff;
+            --textarea-txt: #000;
+            --btn-std: #e5e7e9;
+            --btn-prime: #aed6f1;
+            --btn-func: #d5dbdb;
+            --footer-border: #ccc;
         }
 
-        /* 3. Transparent Button Styling */
-        .keyb { margin: 20px auto; border-spacing: 8px; }
+        body { background-color: var(--bg-color); font-family: Arial, sans-serif; color: var(--text-color); margin: 0; padding: 10px; text-align: center; transition: 0.3s; }
         
-        .button, .button2 { 
-            border-radius: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            font-size: 22px; 
-            cursor: pointer; 
-            width: 60px; 
-            height: 60px; 
-            color: white;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+        #stats { color: var(--stats-color); font-size: 14px; margin-bottom: 5px; font-weight: bold; text-align: left; max-width: 320px; margin: 0 auto 5px auto; }
+        
+        #mo { 
+            background-color: var(--textarea-bg); 
+            color: var(--textarea-txt);
+            width: 320px; height: 150px; font-size: 18px; 
+            border: 2px solid var(--stats-color); padding: 5px; 
+            box-sizing: border-box; display: block; margin: 0 auto; 
+            border-radius: 4px;
         }
 
-        /* Subtle color tinting via RGBA */
-        .button { background: rgba(249, 231, 159, 0.2); } /* Yellow tint */
-        .button2 { background: rgba(0, 255, 255, 0.2); }  /* Cyan tint */
+        .key-grid { margin: 10px auto; border-collapse: collapse; }
+        .button, .button2 { width: 52px; height: 52px; font-size: 24px; margin: 3px; cursor: pointer; border: none; border-radius: 4px; transition: 0.2s; color: #000; }
+        
+        .button { background-color: var(--btn-std); } 
+        .button2 { background-color: var(--btn-prime); } 
+        
+        .func-row { margin: 5px auto; width: 320px; display: flex; justify-content: space-between; }
+        .btn-wide { height: 50px; border: none; border-radius: 4px; font-size: 18px; cursor: pointer; background-color: var(--btn-func); color: #000; }
+        .btn-sm { padding: 8px 10px; margin: 2px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; background-color: var(--btn-std); font-weight: bold; color: #000; }
 
-        .button:hover, .button2:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .button:active { transform: translateY(1px); }
-
-        .wide-btn {
-            width: 150px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-        }
+        .active-caps { background-color: #82e0aa !important; }
+        .active-num { background-color: #85c1e9 !important; }
+        
+        footer { margin-top: 20px; color: var(--text-color); font-size: 14px; border-top: 1px solid var(--footer-border); padding-top: 10px; }
+        footer a { color: var(--stats-color); text-decoration: none; }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
-    <h2>QuickClick <span style="font-weight:100;">Glass</span></h2>
+    <div id="stats">
+        WORDS: <span id="word-count">0</span> | CHARS: <span id="char-count">0</span>
+    </div>
 
-    <textarea id="mo" placeholder="Start typing..."></textarea>
+    <textarea id="mo" placeholder="Start clicking..."></textarea>
 
-    <table class="keyb">
+    <table class="key-grid">
         <tr>
-            <td><button class="button" onclick="typeKey('c')">c</button></td>
-            <td><button class="button2" onclick="typeKey('s')">s</button></td>
-            <td><button class="button2" onclick="typeKey('e')">e</button></td>
-            <td><button class="button2" onclick="typeKey('n')">n</button></td>
-            <td><button class="button" onclick="typeKey('w')">w</button></td>
+            <td><button class="button" onclick="qcInput(this)">c</button></td>
+            <td><button class="button2" onclick="qcInput(this)">s</button></td>
+            <td><button class="button2" onclick="qcInput(this)">e</button></td>
+            <td><button class="button2" onclick="qcInput(this)">n</button></td>
+            <td><button class="button" onclick="qcInput(this)">w</button></td>
         </tr>
         <tr>
-            <td><button class="button" onclick="typeKey('d')">d</button></td>
-            <td><button class="button2" onclick="typeKey('h')">h</button></td>
-            <td><button class="button2" onclick="typeKey('o')">o</button></td>
-            <td><button class="button2" onclick="typeKey('r')">r</button></td>
-            <td><button class="button" onclick="typeKey('y')">y</button></td>
+            <td><button class="button" onclick="qcInput(this)">d</button></td>
+            <td><button class="button2" onclick="qcInput(this)">h</button></td>
+            <td><button class="button2" onclick="qcInput(this)">o</button></td>
+            <td><button class="button2" onclick="qcInput(this)">r</button></td>
+            <td><button class="button" onclick="qcInput(this)">y</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">f</button></td>
+            <td><button class="button2" onclick="qcInput(this)">i</button></td>
+            <td><button class="button2" onclick="qcInput(this)">t</button></td>
+            <td><button class="button2" onclick="qcInput(this)">a</button></td>
+            <td><button class="button" onclick="qcInput(this)">u</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">g</button></td>
+            <td><button class="button" onclick="qcInput(this)">k</button></td>
+            <td><button class="button" onclick="qcInput(this)">l</button></td>
+            <td><button class="button" onclick="qcInput(this)">m</button></td>
+            <td><button class="button" onclick="qcInput(this)">p</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">b</button></td>
+            <td><button class="button" onclick="qcInput(this)">j</button></td>
+            <td><button class="button" onclick="qcInput(this)">q</button></td>
+            <td><button class="button" onclick="qcInput(this)">v</button></td>
+            <td><button class="button" onclick="qcInput(this)">x</button></td>
         </tr>
     </table>
 
-    <div style="margin-bottom: 20px;">
-        <button class="wide-btn" onclick="typeKey(' ')">SPACE</button>
-        <button class="wide-btn" onclick="typeKey('\n')">ENTER</button>
+    <div class="func-row">
+        <button class="btn-wide" style="width: 155px;" onclick="qcSpace()">space</button>
+        <button class="btn-wide" style="width: 100px;" onclick="qcNl()">new line</button>
+        <button class="btn-wide" style="width: 55px; background-color: #f5b7b1;" onclick="qcBackspace()">⌫</button>
     </div>
 
-    <div>
-        <button class="wide-btn" style="width:80px; background:rgba(46, 204, 113, 0.3);" onclick="copyText()">COPY</button>
-        <button class="wide-btn" style="width:80px; background:rgba(231, 76, 60, 0.3);" onclick="location.reload()">RESET</button>
+    <div style="margin-top: 10px;">
+        <button class="btn-sm" id="shift-btn" onclick="qcToggleMode('caps')">SHIFT</button>
+        <button class="btn-sm" id="num-btn" onclick="qcToggleMode('num')">123</button>
+        <button class="btn-sm" onclick="qcCopy()">COPY</button>
+        <button class="btn-sm" style="background-color: #a9cce3;" onclick="qcSaveFile()">SAVE</button>
+        <button class="btn-sm" onclick="qcToggleTheme()">THEME</button>
+        <button class="btn-sm" onclick="qcReset()">RESET</button>
     </div>
+
+    <footer>
+        <a href="#">The Golden Triangle</a> | Powered by L K A
+    </footer>
 
     <script>
-        function typeKey(char) {
-            const el = document.getElementById("mo");
-            el.value += char;
-            el.scrollTop = el.scrollHeight; // Auto-scroll to bottom
+        let currentMode = "alpha";
+        let isLightMode = false;
+        const layerAlpha = ["c","s","e","n","w","d","h","o","r","y","f","i","t","a","u","g","k","l","m","p","b","j","q","v","x"];
+        const layerNum = ["1","2","3","4","5","6","7","8","9","0",".",",","?","!","/","@","#","$","%","&","+","-","*","=","("];
+
+        function updateStats() {
+            const text = document.getElementById("mo").value;
+            document.getElementById("char-count").innerText = text.length;
+            const words = text.trim().split(/\s+/);
+            document.getElementById("word-count").innerText = (text.trim() === "") ? 0 : words.length;
         }
 
-        function copyText() {
+        function qcInput(btn) {
+            document.getElementById("mo").value += btn.textContent;
+            updateStats();
+        }
+
+        function qcSpace() { document.getElementById("mo").value += " "; updateStats(); }
+        function qcNl() { document.getElementById("mo").value += "\n"; updateStats(); }
+        
+        function qcBackspace() {
+            const el = document.getElementById("mo");
+            el.value = el.value.slice(0, -1);
+            updateStats();
+        }
+
+        function qcToggleMode(mode) {
+            const buttons = document.querySelectorAll('.button, .button2');
+            currentMode = (currentMode === mode) ? "alpha" : mode;
+
+            buttons.forEach((btn, i) => {
+                if (currentMode === "num") btn.textContent = layerNum[i];
+                else if (currentMode === "caps") btn.textContent = layerAlpha[i].toUpperCase();
+                else btn.textContent = layerAlpha[i];
+            });
+
+            document.getElementById("shift-btn").className = (currentMode === "caps") ? "btn-sm active-caps" : "btn-sm";
+            document.getElementById("num-btn").className = (currentMode === "num") ? "btn-sm active-num" : "btn-sm";
+        }
+
+        function qcToggleTheme() {
+            isLightMode = !isLightMode;
+            document.getElementById("mainBody").classList.toggle("light-mode");
+        }
+
+        function qcCopy() {
             const el = document.getElementById("mo");
             el.select();
-            navigator.clipboard.writeText(el.value);
-            alert("Copied to clipboard!");
+            document.execCommand("copy");
         }
+
+        function qcSaveFile() {
+            const text = document.getElementById("mo").value;
+            const blob = new Blob([text], { type: "text/plain" });
+            const anchor = document.createElement("a");
+            anchor.download = "QC_QuickClick_Export.txt";
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+        }
+
+        function qcReset() { if(confirm("Clear current draft?")) location.reload(); }
     </script>
 </body>
 </html>
-
-
