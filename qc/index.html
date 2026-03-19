@@ -7,33 +7,45 @@
     <style>
         :root {
             --bg: #000; --txt: #fff; --prime: cyan; --std: #f9e79f; --accent: #85c1e9;
-            --textarea-bg: #fff; --textarea-txt: #000;
+            --textarea-bg: #fff; --textarea-txt: #000; --square-bg: #222;
         }
         body.light-mode {
-            --bg: #f4f4f9; --txt: #000; --prime: #aed6f1; --std: #d5dbdb; --accent: #2980b9;
+            --bg: #f4f4f9; --txt: #000; --prime: #aed6f1; --std: #d5dbdb; --accent: #2980b9; --square-bg: #e5e8e8;
         }
         body { background-color: var(--bg); font-family: Arial, sans-serif; color: var(--txt); margin: 0; padding: 10px; text-align: center; transition: 0.3s; }
         
-        /* Wally Index Nav */
         nav { background: #222; padding: 8px; margin-bottom: 10px; border-radius: 4px; font-size: 12px; }
         nav a { color: var(--accent); text-decoration: none; margin: 0 8px; font-weight: bold; }
 
+        /* Stats & Inputs */
         #stats { color: var(--accent); font-size: 14px; font-weight: bold; text-align: left; max-width: 320px; margin: 0 auto 5px; }
-        
         #mo { 
             background: var(--textarea-bg); color: var(--textarea-txt);
-            width: 320px; height: 100px; font-size: 16px; border: 2px solid var(--accent); 
+            width: 320px; height: 80px; font-size: 16px; border: 2px solid var(--accent); 
             padding: 5px; box-sizing: border-box; display: block; margin: 0 auto; border-radius: 4px;
         }
 
+        /* SquareFont Preview Window */
+        .preview-label { font-size: 10px; color: var(--accent); text-align: left; width: 320px; margin: 10px auto 2px; font-weight: bold; }
+        #square-preview {
+            background: var(--square-bg); color: var(--txt);
+            width: 320px; height: 60px; padding: 10px; margin: 0 auto;
+            border: 1px dashed var(--accent); border-radius: 4px;
+            box-sizing: border-box; overflow-y: auto; text-align: left;
+            /* Simulating SquareFont aesthetics */
+            font-family: 'Courier New', Courier, monospace; 
+            text-transform: uppercase; letter-spacing: 3px; font-weight: 900; line-height: 1.2;
+        }
+
         /* Drafting Pad */
-        .pad-container { margin: 10px auto; width: 320px; position: relative; }
+        .pad-container { margin: 10px auto; width: 320px; }
         #draftPad { background: #fff; border: 2px solid var(--accent); cursor: crosshair; touch-action: none; border-radius: 4px; display: block; }
         .pad-tools { display: flex; justify-content: space-between; margin-top: 5px; }
 
         /* QC Grid */
         .key-grid { margin: 5px auto; border-collapse: collapse; }
-        .button, .button2 { width: 52px; height: 52px; font-size: 24px; margin: 3px; cursor: pointer; border: none; border-radius: 4px; color: #000; }
+        .button, .button2 { width: 52px; height: 52px; font-size: 24px; margin: 3px; cursor: pointer; border: none; border-radius: 4px; color: #000; transition: 0.1s; }
+        .button:active, .button2:active { transform: scale(0.95); opacity: 0.8; }
         .button { background: var(--std); } .button2 { background: var(--prime); }
         
         .func-row { margin: 5px auto; width: 320px; display: flex; justify-content: space-between; }
@@ -51,10 +63,13 @@
     </nav>
 
     <div id="stats">W: <span id="word-count">0</span> | C: <span id="char-count">0</span></div>
-    <textarea id="mo" placeholder="Data entry..."></textarea>
+    <textarea id="mo" placeholder="Entry area..." oninput="updateStats()"></textarea>
+
+    <div class="preview-label">SQUAREFONT PREVIEW [LKA-PROPRIETARY]</div>
+    <div id="square-preview"></div>
 
     <div class="pad-container">
-        <canvas id="draftPad" width="320" height="120"></canvas>
+        <canvas id="draftPad" width="320" height="80"></canvas>
         <div class="pad-tools">
             <button class="btn-sm" style="background:#aed6f1" onclick="qcSaveImage()">SAVE IMAGE</button>
             <button class="btn-sm" style="background:#f5b7b1" onclick="clearPad()">CLEAR PAD</button>
@@ -105,7 +120,6 @@
     </footer>
 
     <script>
-        // --- TEXT LOGIC ---
         let currentMode = "alpha";
         const layerAlpha = ["c","s","e","n","w","d","h","o","r","y","f","i","t","a","u","g","k","l","m","p","b","j","q","v","x"];
         const layerNum = ["1","2","3","4","5","6","7","8","9","0",".",",","?","!","/","@","#","$","%","&","+","-","*","=","("];
@@ -114,14 +128,17 @@
             const val = document.getElementById("mo").value;
             document.getElementById("char-count").innerText = val.length;
             document.getElementById("word-count").innerText = val.trim() ? val.trim().split(/\s+/).length : 0;
+            // Sync with SquareFont Preview
+            document.getElementById("square-preview").innerText = val;
         }
         function qcInput(btn) { document.getElementById("mo").value += btn.textContent; updateStats(); }
         function qcSpace() { document.getElementById("mo").value += " "; updateStats(); }
         function qcNl() { document.getElementById("mo").value += "\n"; updateStats(); }
         function qcBackspace() { document.getElementById("mo").value = document.getElementById("mo").value.slice(0,-1); updateStats(); }
+        
         function qcToggleMode(m) {
             currentMode = (currentMode === m) ? "alpha" : m;
-            document.querySelectorAll('.button, .button2').forEach((b, i) => {
+            document.querySelectorAll('.key-grid .button, .key-grid .button2').forEach((b, i) => {
                 if (currentMode === "num") b.textContent = layerNum[i];
                 else b.textContent = currentMode === "caps" ? layerAlpha[i].toUpperCase() : layerAlpha[i];
             });
@@ -130,18 +147,16 @@
         }
         function qcToggleTheme() { document.body.classList.toggle("light-mode"); }
         function qcCopy() { const m = document.getElementById("mo"); m.select(); document.execCommand("copy"); }
-        
         function qcSaveFile() {
             const b = new Blob([document.getElementById("mo").value], {type:"text/plain"});
             const a = document.createElement("a"); a.download = "WallyQC_Draft.txt"; a.href = URL.createObjectURL(b); a.click();
         }
-        function qcReset() { if(confirm("Reset everything?")) location.reload(); }
+        function qcReset() { if(confirm("Clear everything?")) location.reload(); }
 
-        // --- DRAFTING PAD LOGIC ---
+        // --- DRAFTING PAD ---
         const canvas = document.getElementById('draftPad');
         const ctx = canvas.getContext('2d');
         let drawing = false;
-
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -161,10 +176,7 @@
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
         canvas.addEventListener('touchend', stop);
-        
         function clearPad() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        // --- IMAGE SAVE LOGIC ---
         function qcSaveImage() {
             const link = document.createElement('a');
             link.download = 'Wally_Sketch.png';
