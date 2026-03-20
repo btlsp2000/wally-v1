@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD - Mirror Polyline</title>
+    <style>
+        body {
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            font-family: sans-serif;
+            color: #333;
+        }
+        .container {
+            max-width: 840px;
+            margin: 0 auto;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: crosshair;
+        }
+        .legend {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            font-weight: bold;
+        }
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Wally Studio Viewport</h2>
+        
+        <canvas id="wallyCanvas" width="800" height="500"></canvas>
+
+        <div class="legend">
+            <span><div class="color-box" style="background: black;"></div> Original Polyline</span>
+            <span><div class="color-box" style="background: red;"></div> Mirror Axis</span>
+            <span><div class="color-box" style="background: blue;"></div> Mirrored Polyline</span>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. WALLY COMPILER (The Engine)
+        // ==========================================
+
+        function mirrorPoint(x, y, x1, y1, x2, y2) {
+            const A = y2 - y1;
+            const B = x1 - x2;
+            const C = x2 * y1 - x1 * y2;
+
+            const denominator = A * A + B * B;
+            
+            if (denominator === 0) return { x: x, y: y }; 
+
+            const newX = x - (2 * A * (A * x + B * y + C)) / denominator;
+            const newY = y - (2 * B * (A * x + B * y + C)) / denominator;
+
+            return { x: newX, y: newY };
+        }
+
+        function mirrorPolyline(vertices, axisX1, axisY1, axisX2, axisY2) {
+            return vertices.map(vertex => {
+                return mirrorPoint(vertex.x, vertex.y, axisX1, axisY1, axisX2, axisY2);
+            });
+        }
+
+        // ==========================================
+        // 2. STUDIO RENDERING (The Viewport)
+        // ==========================================
+
+        function drawPolyline(ctx, vertices, color = '#000', lineWidth = 2) {
+            if (vertices.length < 2) return; 
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            
+            ctx.moveTo(vertices[0].x, vertices[0].y); 
+
+            for (let i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            
+            ctx.stroke(); 
+        }
+
+        function drawAxis(ctx, x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 4]); 
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+        }
+
+        // ==========================================
+        // 3. INITIALIZATION & EXECUTION
+        // ==========================================
+        
+        const canvas = document.getElementById('wallyCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const originalPolyline = [
+            { x: 100, y: 350 },
+            { x: 100, y: 200 },
+            { x: 180, y: 120 },
+            { x: 260, y: 200 },
+            { x: 260, y: 350 },
+            { x: 180, y: 350 }
+        ];
+
+        const axisX1 = 400;
+        const axisY1 = 50;
+        const axisX2 = 400;
+        const axisY2 = 450;
+
+        const mirroredPolyline = mirrorPolyline(originalPolyline, axisX1, axisY1, axisX2, axisY2);
+
+        drawPolyline(ctx, originalPolyline, '#000000', 3); 
+        drawAxis(ctx, axisX1, axisY1, axisX2, axisY2);       
+        drawPolyline(ctx, mirroredPolyline, '#0000ff', 3); 
+
+    </script>
+</body>
+</html>
