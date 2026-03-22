@@ -1,0 +1,381 @@
+
+<!DOCTYPE HTML>
+<html>
+  <head>
+
+<title>Bill's Pool Table</title>
+
+<LINK REL="SHORTCUT ICON"
+HREF="https://btlsp2000.tripod.com/b/0-gt/btdot.png">
+
+<meta name="keywords" content=""/>
+
+<meta name="viewport"
+content="width=device-width; initial-scale=1; user-scaleable=true;
+maximum-scale=1; minimum-scale=1;"/>
+
+<style>
+
+.dropbtn {
+  background-color: #fef9e7;
+  color: #000;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.dropbtnb {
+  background-color: #82e0aa;
+  color: #000;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.dropbtn:hover, .dropbtn:focus {
+  background-color: #2980B9;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-contentb {
+opacity:0.95;
+  display: none;
+  position: absolute;
+  background-color: #82e0aa;
+  min-width: 180px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content {
+  opacity:0.95;
+  display: none;
+  position: absolute;
+  background-color: #FFFFBF;
+  min-width: 180px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  font-size:14px;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown a:hover {background-color: #ddd;}
+
+.show {display: block;}
+
+
+#myDiv{
+//visibility:visible;
+}
+
+body {
+  font-family: "Arial", sans-serif;
+}
+
+html {
+  font-size: 100%;
+}
+</style>
+
+</head>
+
+<body bgcolor="#cde">
+<div class="dropdown" id="dd">
+
+  <button onclick="myFunction()" class="dropbtn" id="ntb"><img src="https://btlsp2000.tripod.com/b/0-gt/menub.jpg" class="dropbtn" width="60"></button>
+  <div id="myDropdown" class="dropdown-content" id="ddn">
+
+  <a href="https://btlsp2000.tripod.com/bcards/0-charade.html">The Golden Triangle</a>
+
+
+<!--
+<a href='javascript:;' onclick='op()'>Random Break</a>
+<a href='javascript:;' onclick='op()'>Practice Position</a>
+-->
+<!--
+<button onclick="myFunction()" class="dropbtn">Menu</button>
+-->
+
+  </div>
+</div>
+<br><br>
+<b>The Ghost Ball</b>.....<a href="#" onclick="boxani()"><img src="arrw.png" alt="Color 1" height="24" width="">RUN</a>
+<br><br><br>
+
+<div id="myDiv">
+<a href="#" onclick="boxani()"><img src="malcolmattheo.jpg" alt="Color 1" height="" width="480"></a>
+</div>
+
+<canvas id="myCanvas" height="320" width="560"></canvas>
+
+<script>
+
+var canvas = document.getElementById('myCanvas');
+var context = canvas.getContext('2d');
+
+var iw = window.innerWidth;
+var ih = window.innerHeight;
+
+var af;
+
+var n = 0;
+
+var framesPerSecond = 25;
+ 
+function boxani(){
+
+    //const elementToHide = document.getElementById('malc');
+    const myDiv = document.getElementById('myDiv');
+    myDiv.style.display = 'none';
+
+
+    setTimeout(function() {
+
+af = window.requestAnimationFrame(boxani);
+context.clearRect(0, 0, iw, ih);
+
+var s = 5;  // scale
+var o = 10;  // offset
+var b1x = 24;
+var b1y = 6;
+
+var t = (Math.atan((b1y - 1.1) / (b1x - 1.1)));
+var cbr = 1.1;  // cue ball radius
+var obr = 1.0;  // obeject ball radius
+var oca = 1.5;
+
+//var oca = (cbr + obr) / 2;
+//var balls = [cbr, obr];
+//var oca = av(balls);
+
+//var h = 2 * Math.round(Math.sin(t) * oca);
+var g = 2 * Math.round(Math.cos(t) * oca);
+var h = 1;
+
+var e = Math.round(24 * (24 - g) / 24);
+//var e = 24;
+
+var j = 1.0;
+var k = (24 - g) / (24 - h);
+
+var b2x = (6 + 48 - (j * n)) * s;
+var b2y = (6 + 24 - (k * n)) * s;
+
+//.....E
+context.fillStyle = " #c04000 ";  //c04000 mahogany
+context.fillRect(10 + (3 * s), 10 + (3 * s), 102 * s, 54 * s);
+
+//.....A
+context.fillStyle = " #c04000 ";
+context.fillRect(10 + s, 10 + (3 * s), 2 * s, 54 * s);
+
+//.....B
+context.fillStyle = " #c04000 ";
+context.fillRect(10 + (105 * s), 10 + (3 * s), 2 * s, 54 * s);
+
+//.....C
+context.fillStyle = " #c04000 ";
+context.fillRect(10 + (3 * s), 10 + s, 102 * s, 2 * s);
+
+//.....D
+context.fillStyle = " #c04000 ";
+context.fillRect(10 + (3 * s), 10 + 57 * s, 102 * s, 2 * s);
+
+//.....F
+context.fillStyle = "#080"; //080 Green
+context.fillRect(10 + 6 * s, 10 + 6 * s, 96 * s, 48 * s);
+
+context.fillStyle = " #000 ";
+
+    var circle = new Path2D();
+    circle.arc((6 * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(((6 + 96) * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc((6 * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(((6 + 96) * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+//---------center pockets
+
+    var circle = new Path2D();
+    circle.arc(((6 + 48) * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(((6 + 48) * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
+    context.fill(circle);
+
+context.fillStyle = "#080";
+context.fillRect(10 + 6 * s, 10 + 6 * s, 6 * s, 6 * s);
+
+context.fillStyle = "#080";
+context.fillRect(10 + ((6 + 45) * s), 10 + 6 * s, 6 * s, 6 * s);
+
+context.fillStyle = "#080";
+context.fillRect(10 + ((6 + 45) * s), 10 + (6 + 42) * s, 6 * s, 6 * s);
+
+context.fillStyle = "#080";
+context.fillRect(10 + 6 * s, 10 + (6 + 42) * s, 6 * s, 6 * s);
+
+context.fillStyle = "#080";
+context.fillRect(10 + ((6 + 90) * s), 10 + 6 * s, 6 * s, 6 * s);
+
+context.fillStyle = "#080";
+context.fillRect(10 + ((6 + 90) * s), 10 + (6 + 42) * s, 6 * s, 6 * s);
+
+    var circle = new Path2D();
+    circle.arc(10 + (3 * s), 10 + (3 * s), Math.round(2.0 * s), 0, Math.PI * 2);
+context.fillStyle = "#c40";
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(10 + (2 * s) + (103 * s), 10 + (3 * s), Math.round(2.0 * s), 0, Math.PI * 2);
+context.fillStyle = "#c40";
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(10 + (3 * s), 10 + (2 * s) + 55 * s, Math.round(2.0 * s), 0, Math.PI * 2);
+context.fillStyle = "#c40";
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc(10 + (2 * s) + (103 * s), 10 + (2 * s) + 55 * s, Math.round(2.0 * s), 0, Math.PI * 2);
+context.fillStyle = "#c40";
+    context.fill(circle);
+
+///////////////////////////////////////////////////---------cue ball---------///////////////////////////////////////////////////
+
+    var circle = new Path2D();
+    circle.arc(b2x + 10, b2y + 10, Math.round(oca * s), 0, Math.PI * 2);
+    context.fillStyle = "#fff";
+    context.fill(circle);
+
+    var circle = new Path2D();
+    circle.arc((6 +48 + h) *s + 10, (6 + 24 + h) * s + 10, Math.round(oca * s), 0, Math.PI * 2);
+    context.fillStyle = "#fff";
+    context.fill(circle);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//---------object ball
+
+    var circle = new Path2D();
+    circle.arc(((6 + 24) * s) + 10, ((6 + 6) * s) + 10, Math.round(oca * s), 0, Math.PI * 2);
+context.fillStyle = "#ff0";
+    context.fill(circle);
+
+//---------8-ball
+
+    var circle = new Path2D();
+    circle.arc(((6 + 53) * s) + 10, ((6 + 43) * s) + 10, Math.round(oca * s), 0, Math.PI * 2);
+context.fillStyle = "#000";
+    context.fill(circle);
+
+//---------ghost ball
+
+    var circle = new Path2D();
+    circle.arc(o + (6 + 24 + g) * s, o + (6 + 6 + h) * s, Math.round(oca * s), 0, Math.PI * 2);
+context.fillStyle = "#cde";
+    context.fill(circle);
+
+//---------line 1
+
+      context.beginPath();
+      context.moveTo(o + Math.round(7.1 * s), o + Math.round(7.1 * s));
+      context.lineTo(o + (6 + 24 + g) * s, o + (6 + 6 + h) * s);
+
+      context.strokeStyle = ' #000   ';
+      context.stroke();
+
+//---------line 2
+
+      context.beginPath();
+      context.moveTo(((6 + 24) * s) + 10 + (s * g), ((6 + 6) * s) + 10 + (s * h));
+      context.lineTo(((6 + 48) * s) + 10, ((6 + 24) * s) + 10);
+
+      context.strokeStyle = ' #000   ';
+      context.stroke();
+
+/*---------line 3
+
+      context.beginPath();
+      context.moveTo(((6 + 24) * s) + 10, ((6 + 6) * s) + 10);
+      context.lineTo(((6 + 48) * s) + 10, ((6 + 24) * s) + 10);
+
+      context.strokeStyle = ' #000   ';
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(Math.round(6.0 * s) + 10, Math.round(6.0 * s) + 10);
+      context.lineTo(Math.round(8.2 * s) + 10, Math.round(6.0 * s) + 10);
+      context.lineTo(Math.round(6.0 * s) + 10, Math.round(8.2 * s) + 10);
+      context.closePath();
+      context.fillStyle = ' #000   ';
+      context.fill();
+*/
+
+context.font = '11pt Arial';
+context.fillStyle = '#fff';
+context.fillText('VALLEY', 100, 33);
+
+if (n >= e){
+window.cancelAnimationFrame(af);
+}
+
+n = n += 1;  //increment
+
+    }, 1000 / framesPerSecond);
+}
+
+/*
+boxani();
+*/
+
+function myFunction() {
+  document.getElementById("myDropdown").classList.toggle("show");
+}
+
+ window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+
+</script>
+
+<br>
+
+
+
+</body>
+</html> 
+
