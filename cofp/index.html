@@ -1,381 +1,122 @@
-
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-  <head>
-
-<title>Bill's Pool Table</title>
-
-<LINK REL="SHORTCUT ICON"
-HREF="https://btlsp2000.tripod.com/b/0-gt/btdot.png">
-
-<meta name="keywords" content=""/>
-
-<meta name="viewport"
-content="width=device-width; initial-scale=1; user-scaleable=true;
-maximum-scale=1; minimum-scale=1;"/>
-
-<style>
-
-.dropbtn {
-  background-color: #fef9e7;
-  color: #000;
-  padding: 10px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-}
-
-.dropbtnb {
-  background-color: #82e0aa;
-  color: #000;
-  padding: 10px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-}
-
-.dropbtn:hover, .dropbtn:focus {
-  background-color: #2980B9;
-}
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-contentb {
-opacity:0.95;
-  display: none;
-  position: absolute;
-  background-color: #82e0aa;
-  min-width: 180px;
-  overflow: auto;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown-content {
-  opacity:0.95;
-  display: none;
-  position: absolute;
-  background-color: #FFFFBF;
-  min-width: 180px;
-  overflow: auto;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown-content a {
-  color: black;
-  font-size:14px;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-}
-
-.dropdown a:hover {background-color: #ddd;}
-
-.show {display: block;}
-
-
-#myDiv{
-//visibility:visible;
-}
-
-body {
-  font-family: "Arial", sans-serif;
-}
-
-html {
-  font-size: 100%;
-}
-</style>
-
+<head>
+    <title>Interactive Ghost Ball</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #eee; text-align: center; margin: 0; padding: 20px; }
+        canvas { background: #0e5a32; border: 15px solid #3e2723; border-radius: 10px; cursor: grab; max-width: 100%; height: auto; }
+        canvas:active { cursor: grabbing; }
+        .ui { margin-bottom: 15px; }
+        b { color: #f1c40f; }
+    </style>
 </head>
+<body>
 
-<body bgcolor="#cde">
-<div class="dropdown" id="dd">
-
-  <button onclick="myFunction()" class="dropbtn" id="ntb"><img src="https://btlsp2000.tripod.com/b/0-gt/menub.jpg" class="dropbtn" width="60"></button>
-  <div id="myDropdown" class="dropdown-content" id="ddn">
-
-  <a href="https://btlsp2000.tripod.com/bcards/0-charade.html">The Golden Triangle</a>
-
-
-<!--
-<a href='javascript:;' onclick='op()'>Random Break</a>
-<a href='javascript:;' onclick='op()'>Practice Position</a>
--->
-<!--
-<button onclick="myFunction()" class="dropbtn">Menu</button>
--->
-
-  </div>
-</div>
-<br><br>
-<b>The Ghost Ball</b>.....<a href="#" onclick="boxani()"><img src="arrw.png" alt="Color 1" height="24" width="">RUN</a>
-<br><br><br>
-
-<div id="myDiv">
-<a href="#" onclick="boxani()"><img src="malcolmattheo.jpg" alt="Color 1" height="" width="480"></a>
-</div>
-
-<canvas id="myCanvas" height="320" width="560"></canvas>
+    <div class="ui">
+        <h2>Interactive Aim Trainer</h2>
+        <p>Drag the <b>White Cue Ball</b> or <b>Yellow Object Ball</b> to see the Ghost Ball adjust.</p>
+    </div>
+    
+    <canvas id="poolTable" width="800" height="400"></canvas>
 
 <script>
+const canvas = document.getElementById('poolTable');
+const ctx = canvas.getContext('2d');
 
-var canvas = document.getElementById('myCanvas');
-var context = canvas.getContext('2d');
+const ballRadius = 15;
+const pocket = { x: 800, y: 0 }; // Top Right Pocket
 
-var iw = window.innerWidth;
-var ih = window.innerHeight;
+let balls = [
+    { x: 150, y: 300, color: "#ffffff", label: "Cue", isDragging: false },
+    { x: 500, y: 200, color: "#f1c40f", label: "Object", isDragging: false }
+];
 
-var af;
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const cue = balls[0];
+    const obj = balls[1];
 
-var n = 0;
+    // 1. Calculate Ghost Ball Position
+    // Distance from Pocket to Object Ball
+    const dx = obj.x - pocket.x;
+    const dy = obj.y - pocket.y;
+    const angle = Math.atan2(dy, dx);
+    
+    // The Ghost Ball is exactly 2 radii away from Object Ball center along that angle
+    const ghost = {
+        x: obj.x + Math.cos(angle) * (ballRadius * 2),
+        y: obj.y + Math.sin(angle) * (ballRadius * 2)
+    };
 
-var framesPerSecond = 25;
- 
-function boxani(){
+    // 2. Draw Aiming Lines
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    
+    // Line: Cue to Ghost
+    ctx.beginPath();
+    ctx.moveTo(cue.x, cue.y);
+    ctx.lineTo(ghost.x, ghost.y);
+    ctx.stroke();
 
-    //const elementToHide = document.getElementById('malc');
-    const myDiv = document.getElementById('myDiv');
-    myDiv.style.display = 'none';
+    // Line: Object to Pocket
+    ctx.beginPath();
+    ctx.moveTo(obj.x, obj.y);
+    ctx.lineTo(pocket.x, pocket.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
+    // 3. Draw Ghost Ball
+    ctx.globalAlpha = 0.3;
+    drawBall(ghost.x, ghost.y, "#fff");
+    ctx.globalAlpha = 1.0;
 
-    setTimeout(function() {
-
-af = window.requestAnimationFrame(boxani);
-context.clearRect(0, 0, iw, ih);
-
-var s = 5;  // scale
-var o = 10;  // offset
-var b1x = 24;
-var b1y = 6;
-
-var t = (Math.atan((b1y - 1.1) / (b1x - 1.1)));
-var cbr = 1.1;  // cue ball radius
-var obr = 1.0;  // obeject ball radius
-var oca = 1.5;
-
-//var oca = (cbr + obr) / 2;
-//var balls = [cbr, obr];
-//var oca = av(balls);
-
-//var h = 2 * Math.round(Math.sin(t) * oca);
-var g = 2 * Math.round(Math.cos(t) * oca);
-var h = 1;
-
-var e = Math.round(24 * (24 - g) / 24);
-//var e = 24;
-
-var j = 1.0;
-var k = (24 - g) / (24 - h);
-
-var b2x = (6 + 48 - (j * n)) * s;
-var b2y = (6 + 24 - (k * n)) * s;
-
-//.....E
-context.fillStyle = " #c04000 ";  //c04000 mahogany
-context.fillRect(10 + (3 * s), 10 + (3 * s), 102 * s, 54 * s);
-
-//.....A
-context.fillStyle = " #c04000 ";
-context.fillRect(10 + s, 10 + (3 * s), 2 * s, 54 * s);
-
-//.....B
-context.fillStyle = " #c04000 ";
-context.fillRect(10 + (105 * s), 10 + (3 * s), 2 * s, 54 * s);
-
-//.....C
-context.fillStyle = " #c04000 ";
-context.fillRect(10 + (3 * s), 10 + s, 102 * s, 2 * s);
-
-//.....D
-context.fillStyle = " #c04000 ";
-context.fillRect(10 + (3 * s), 10 + 57 * s, 102 * s, 2 * s);
-
-//.....F
-context.fillStyle = "#080"; //080 Green
-context.fillRect(10 + 6 * s, 10 + 6 * s, 96 * s, 48 * s);
-
-context.fillStyle = " #000 ";
-
-    var circle = new Path2D();
-    circle.arc((6 * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(((6 + 96) * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc((6 * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(((6 + 96) * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-//---------center pockets
-
-    var circle = new Path2D();
-    circle.arc(((6 + 48) * s) + 10, (6 * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(((6 + 48) * s) + 10, ((6 + 48) * s) + 10, Math.round(2.2 * s), 0, Math.PI * 2);
-    context.fill(circle);
-
-context.fillStyle = "#080";
-context.fillRect(10 + 6 * s, 10 + 6 * s, 6 * s, 6 * s);
-
-context.fillStyle = "#080";
-context.fillRect(10 + ((6 + 45) * s), 10 + 6 * s, 6 * s, 6 * s);
-
-context.fillStyle = "#080";
-context.fillRect(10 + ((6 + 45) * s), 10 + (6 + 42) * s, 6 * s, 6 * s);
-
-context.fillStyle = "#080";
-context.fillRect(10 + 6 * s, 10 + (6 + 42) * s, 6 * s, 6 * s);
-
-context.fillStyle = "#080";
-context.fillRect(10 + ((6 + 90) * s), 10 + 6 * s, 6 * s, 6 * s);
-
-context.fillStyle = "#080";
-context.fillRect(10 + ((6 + 90) * s), 10 + (6 + 42) * s, 6 * s, 6 * s);
-
-    var circle = new Path2D();
-    circle.arc(10 + (3 * s), 10 + (3 * s), Math.round(2.0 * s), 0, Math.PI * 2);
-context.fillStyle = "#c40";
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(10 + (2 * s) + (103 * s), 10 + (3 * s), Math.round(2.0 * s), 0, Math.PI * 2);
-context.fillStyle = "#c40";
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(10 + (3 * s), 10 + (2 * s) + 55 * s, Math.round(2.0 * s), 0, Math.PI * 2);
-context.fillStyle = "#c40";
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc(10 + (2 * s) + (103 * s), 10 + (2 * s) + 55 * s, Math.round(2.0 * s), 0, Math.PI * 2);
-context.fillStyle = "#c40";
-    context.fill(circle);
-
-///////////////////////////////////////////////////---------cue ball---------///////////////////////////////////////////////////
-
-    var circle = new Path2D();
-    circle.arc(b2x + 10, b2y + 10, Math.round(oca * s), 0, Math.PI * 2);
-    context.fillStyle = "#fff";
-    context.fill(circle);
-
-    var circle = new Path2D();
-    circle.arc((6 +48 + h) *s + 10, (6 + 24 + h) * s + 10, Math.round(oca * s), 0, Math.PI * 2);
-    context.fillStyle = "#fff";
-    context.fill(circle);
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//---------object ball
-
-    var circle = new Path2D();
-    circle.arc(((6 + 24) * s) + 10, ((6 + 6) * s) + 10, Math.round(oca * s), 0, Math.PI * 2);
-context.fillStyle = "#ff0";
-    context.fill(circle);
-
-//---------8-ball
-
-    var circle = new Path2D();
-    circle.arc(((6 + 53) * s) + 10, ((6 + 43) * s) + 10, Math.round(oca * s), 0, Math.PI * 2);
-context.fillStyle = "#000";
-    context.fill(circle);
-
-//---------ghost ball
-
-    var circle = new Path2D();
-    circle.arc(o + (6 + 24 + g) * s, o + (6 + 6 + h) * s, Math.round(oca * s), 0, Math.PI * 2);
-context.fillStyle = "#cde";
-    context.fill(circle);
-
-//---------line 1
-
-      context.beginPath();
-      context.moveTo(o + Math.round(7.1 * s), o + Math.round(7.1 * s));
-      context.lineTo(o + (6 + 24 + g) * s, o + (6 + 6 + h) * s);
-
-      context.strokeStyle = ' #000   ';
-      context.stroke();
-
-//---------line 2
-
-      context.beginPath();
-      context.moveTo(((6 + 24) * s) + 10 + (s * g), ((6 + 6) * s) + 10 + (s * h));
-      context.lineTo(((6 + 48) * s) + 10, ((6 + 24) * s) + 10);
-
-      context.strokeStyle = ' #000   ';
-      context.stroke();
-
-/*---------line 3
-
-      context.beginPath();
-      context.moveTo(((6 + 24) * s) + 10, ((6 + 6) * s) + 10);
-      context.lineTo(((6 + 48) * s) + 10, ((6 + 24) * s) + 10);
-
-      context.strokeStyle = ' #000   ';
-      context.stroke();
-
-      context.beginPath();
-      context.moveTo(Math.round(6.0 * s) + 10, Math.round(6.0 * s) + 10);
-      context.lineTo(Math.round(8.2 * s) + 10, Math.round(6.0 * s) + 10);
-      context.lineTo(Math.round(6.0 * s) + 10, Math.round(8.2 * s) + 10);
-      context.closePath();
-      context.fillStyle = ' #000   ';
-      context.fill();
-*/
-
-context.font = '11pt Arial';
-context.fillStyle = '#fff';
-context.fillText('VALLEY', 100, 33);
-
-if (n >= e){
-window.cancelAnimationFrame(af);
+    // 4. Draw Real Balls
+    balls.forEach(b => drawBall(b.x, b.y, b.color, b.label));
 }
 
-n = n += 1;  //increment
-
-    }, 1000 / framesPerSecond);
-}
-
-/*
-boxani();
-*/
-
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
-}
-
- window.onclick = function(event) {
-  if (!event.target.matches('.dropbtn')) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
-    var i;
-    for (i = 0; i < dropdowns.length; i++) {
-      var openDropdown = dropdowns[i];
-      if (openDropdown.classList.contains('show')) {
-        openDropdown.classList.remove('show');
-      }
+function drawBall(x, y, color, label="") {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if(label) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Arial";
+        ctx.fillText(label, x - 15, y - 20);
     }
-  }
 }
 
+// Interaction Logic
+canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    balls.forEach(b => {
+        const dist = Math.hypot(b.x - mouseX, b.y - mouseY);
+        if (dist < ballRadius * 2) b.isDragging = true;
+    });
+});
+
+window.addEventListener('mousemove', e => {
+    const draggingBall = balls.find(b => b.isDragging);
+    if (draggingBall) {
+        const rect = canvas.getBoundingClientRect();
+        draggingBall.x = e.clientX - rect.left;
+        draggingBall.y = e.clientY - rect.top;
+        draw();
+    }
+});
+
+window.addEventListener('mouseup', () => {
+    balls.forEach(b => b.isDragging = false);
+});
+
+draw(); // Initial Render
 </script>
-
-<br>
-
-
-
 </body>
-</html> 
-
+</html>
