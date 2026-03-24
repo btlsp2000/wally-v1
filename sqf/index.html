@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QC Quick Click | WallyCAD</title>
+    <style>
+        :root {
+            --bg: #000; --txt: #fff; --prime: cyan; --std: #f9e79f; --accent: #85c1e9;
+            --textarea-bg: #fff; --textarea-txt: #000; --square-bg: #222;
+        }
+        body.light-mode {
+            --bg: #f4f4f9; --txt: #000; --prime: #aed6f1; --std: #d5dbdb; --accent: #2980b9; --square-bg: #e5e8e8;
+        }
+        body { background-color: var(--bg); font-family: Arial, sans-serif; color: var(--txt); margin: 0; padding: 10px; text-align: center; transition: 0.3s; overflow-x: hidden; }
+        
+        nav { background: #222; padding: 8px; margin-bottom: 10px; border-radius: 4px; font-size: 12px; }
+        nav a { color: var(--accent); text-decoration: none; margin: 0 8px; font-weight: bold; }
+
+        #stats { color: var(--accent); font-size: 14px; font-weight: bold; text-align: left; max-width: 320px; margin: 0 auto 5px; height: 18px; }
+        #mo { 
+            background: var(--textarea-bg); color: var(--textarea-txt);
+            width: 320px; height: 80px; font-size: 16px; border: 2px solid var(--accent); 
+            padding: 5px; box-sizing: border-box; display: block; margin: 0 auto; border-radius: 4px;
+        }
+
+        /* SquareFont Preview */
+        .preview-label { font-size: 10px; color: var(--accent); text-align: left; width: 320px; margin: 10px auto 2px; font-weight: bold; }
+        #square-preview {
+            background: var(--square-bg); color: var(--txt);
+            width: 320px; height: 50px; padding: 10px; margin: 0 auto;
+            border: 1px dashed var(--accent); border-radius: 4px;
+            box-sizing: border-box; overflow-y: auto; text-align: left;
+            font-family: 'Courier New', Courier, monospace; 
+            text-transform: uppercase; letter-spacing: 3px; font-weight: 900; line-height: 1.2;
+        }
+
+        /* Drafting Pad & Crosshair */
+        .pad-container { margin: 10px auto; width: 320px; position: relative; overflow: hidden; border-radius: 4px; border: 2px solid var(--accent); }
+        #draftPad { background: #fff; cursor: none; touch-action: none; display: block; }
+        
+        /* Grid Pattern CSS */
+        .grid-active {
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .ch-line { position: absolute; background: rgba(130, 224, 170, 0.5); pointer-events: none; display: none; z-index: 10; }
+        #v-ch { width: 1px; height: 100%; top: 0; }
+        #h-ch { height: 1px; width: 100%; left: 0; }
+
+        /* QC Grid */
+        .key-grid { margin: 5px auto; border-collapse: collapse; }
+        .button, .button2 { width: 52px; height: 52px; font-size: 24px; margin: 3px; cursor: pointer; border: none; border-radius: 4px; color: #000; transition: 0.1s; }
+        .button:active, .button2:active { transform: scale(0.95); }
+        .button { background: var(--std); } .button2 { background: var(--prime); }
+        
+        .func-row { margin: 5px auto; width: 320px; display: flex; justify-content: space-between; }
+        .btn-wide { height: 45px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; background: #fff; color: #000; }
+        .btn-sm { padding: 6px 8px; margin: 2px; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; background: var(--std); font-weight: bold; color: #000; }
+        .active-on { background: #82e0aa !important; }
+        
+        footer { margin-top: 15px; font-size: 12px; border-top: 1px solid #333; padding-top: 10px; }
+    </style>
+</head>
+<body id="mainBody">
+
+    <nav>
+        <a href="#">WALLYCAD.COM</a> | <a href="#">LINKS</a> | <a href="#">/QC</a>
+    </nav>
+
+    <div id="stats">W: 0 | C: 0</div>
+    <textarea id="mo" placeholder="Entry area..." oninput="updateStats()"></textarea>
+
+    <div class="preview-label">SQUAREFONT PREVIEW [LKA-PROPRIETARY]</div>
+    <div id="square-preview"></div>
+
+    <div class="pad-container" id="pcon">
+        <div id="v-ch" class="ch-line"></div>
+        <div id="h-ch" class="ch-line"></div>
+        <canvas id="draftPad" width="320" height="100"></canvas>
+    </div>
+    
+    <div class="pad-tools" style="width:320px; margin:0 auto; display:flex; justify-content:space-between;">
+        <button class="btn-sm" onclick="qcSaveImage()">SAVE IMG</button>
+        <button class="btn-sm" id="grid-btn" onclick="qcToggleGrid()">GRID SNAP</button>
+        <button class="btn-sm" id="geo-btn" onclick="qcToggleGeo()">GEO MODE</button>
+        <button class="btn-sm" style="background:#f5b7b1" onclick="clearPad()">CLEAR</button>
+    </div>
+
+    <table class="key-grid">
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">c</button></td>
+            <td><button class="button2" onclick="qcInput(this)">s</button></td>
+            <td><button class="button2" onclick="qcInput(this)">e</button></td>
+            <td><button class="button2" onclick="qcInput(this)">n</button></td>
+            <td><button class="button" onclick="qcInput(this)">w</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">d</button></td>
+            <td><button class="button2" onclick="qcInput(this)">h</button></td>
+            <td><button class="button2" onclick="qcInput(this)">o</button></td>
+            <td><button class="button2" onclick="qcInput(this)">r</button></td>
+            <td><button class="button" onclick="qcInput(this)">y</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">f</button></td>
+            <td><button class="button2" onclick="qcInput(this)">i</button></td>
+            <td><button class="button2" onclick="qcInput(this)">t</button></td>
+            <td><button class="button2" onclick="qcInput(this)">a</button></td>
+            <td><button class="button" onclick="qcInput(this)">u</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">g</button></td>
+            <td><button class="button" onclick="qcInput(this)">k</button></td>
+            <td><button class="button" onclick="qcInput(this)">l</button></td>
+            <td><button class="button" onclick="qcInput(this)">m</button></td>
+            <td><button class="button" onclick="qcInput(this)">p</button></td>
+        </tr>
+        <tr>
+            <td><button class="button" onclick="qcInput(this)">b</button></td>
+            <td><button class="button" onclick="qcInput(this)">j</button></td>
+            <td><button class="button" onclick="qcInput(this)">q</button></td>
+            <td><button class="button" onclick="qcInput(this)">v</button></td>
+            <td><button class="button" onclick="qcInput(this)">x</button></td>
+        </tr>
+    </table>
+
+    <div class="func-row">
+        <button class="btn-wide" style="width: 130px;" onclick="qcSpace()">space</button>
+        <button class="btn-wide" style="width: 100px;" onclick="qcNl()">new line</button>
+        <button class="btn-wide" style="width: 50px; background:#f5b7b1;" onclick="qcBackspace()">⌫</button>
+    </div>
+
+    <div style="margin-top: 5px;">
+        <button class="btn-sm" id="shift-btn" onclick="qcToggleMode('caps')">SHIFT</button>
+        <button class="btn-sm" id="num-btn" onclick="qcToggleMode('num')">123</button>
+        <button class="btn-sm" onclick="qcCopy()">COPY</button>
+        <button class="btn-sm" style="background:#a9cce3;" onclick="qcSaveFile()">SAVE TXT</button>
+        <button class="btn-sm" onclick="qcToggleTheme()">THEME</button>
+        <button class="btn-sm" onclick="qcReset()">RESET</button>
+    </div>
+
+    <footer>
+        <a href="#" style="color:var(--accent); text-decoration:none;">The Golden Triangle</a> | L K A © 2026
+    </footer>
+
+    <script>
+        let currentMode = "alpha";
+        let isGeoMode = false;
+        let isGridSnap = false;
+        let isLightMode = false;
+        const gridSize = 20;
+        const layerAlpha = ["c","s","e","n","w","d","h","o","r","y","f","i","t","a","u","g","k","l","m","p","b","j","q","v","x"];
+        const layerNum = ["1","2","3","4","5","6","7","8","9","0",".",",","?","!","/","@","#","$","%","&","+","-","*","=","("];
+
+        function updateStats() {
+            const val = document.getElementById("mo").value;
+            const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+            document.getElementById("stats").innerHTML = `W: ${words} | C: ${val.length}`;
+            document.getElementById("square-preview").innerText = val;
+        }
+        function qcInput(btn) { document.getElementById("mo").value += btn.textContent; updateStats(); }
+        function qcSpace() { document.getElementById("mo").value += " "; updateStats(); }
+        function qcNl() { document.getElementById("mo").value += "\n"; updateStats(); }
+        function qcBackspace() { document.getElementById("mo").value = document.getElementById("mo").value.slice(0,-1); updateStats(); }
+        
+        function qcToggleMode(m) {
+            currentMode = (currentMode === m) ? "alpha" : m;
+            document.querySelectorAll('.key-grid .button, .key-grid .button2').forEach((b, i) => {
+                if (currentMode === "num") b.textContent = layerNum[i];
+                else b.textContent = currentMode === "caps" ? layerAlpha[i].toUpperCase() : layerAlpha[i];
+            });
+            document.getElementById("shift-btn").className = (currentMode === "caps") ? "btn-sm active-on" : "btn-sm";
+            document.getElementById("num-btn").className = (currentMode === "num") ? "btn-sm active-on" : "btn-sm";
+        }
+
+        function qcToggleTheme() { 
+            isLightMode = !isLightMode; 
+            document.body.classList.toggle("light-mode"); 
+        }
+        
+        function qcToggleGrid() { 
+            isGridSnap = !isGridSnap; 
+            document.getElementById("grid-btn").classList.toggle("active-on");
+            document.getElementById("draftPad").classList.toggle("grid-active");
+        }
+
+        function qcToggleGeo() { 
+            isGeoMode = !isGeoMode; 
+            document.getElementById("geo-btn").classList.toggle("active-on");
+        }
+
+        function qcCopy() { const m = document.getElementById("mo"); m.select(); document.execCommand("copy"); }
+        function qcSaveFile() {
+            const b = new Blob([document.getElementById("mo").value], {type:"text/plain"});
+            const a = document.createElement("a"); a.download = "WallyQC_Draft.txt"; a.href = URL.createObjectURL(b); a.click();
+        }
+        function qcReset() { if(confirm("Reset everything?")) location.reload(); }
+
+        // --- DRAFTING PAD ---
+        const canvas = document.getElementById('draftPad');
+        const ctx = canvas.getContext('2d');
+        const vCH = document.getElementById('v-ch');
+        const hCH = document.getElementById('h-ch');
+        let drawing = false;
+        let startPos = { x: 0, y: 0 };
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let px = clientX - rect.left;
+            let py = clientY - rect.top;
+            if (isGridSnap) {
+                px = Math.round(px / gridSize) * gridSize;
+                py = Math.round(py / gridSize) * gridSize;
+            }
+            return { x: px, y: py };
+        }
+
+        function updateCrosshair(e) {
+            const pos = getPos(e);
+            vCH.style.display = hCH.style.display = 'block';
+            vCH.style.left = pos.x + 'px';
+            hCH.style.top = pos.y + 'px';
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            updateCrosshair(e);
+            if (!drawing) return;
+            draw(e);
+        });
+
+        canvas.addEventListener('mousedown', (e) => { drawing = true; startPos = getPos(e); draw(e); });
+        window.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+        
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; startPos = getPos(e); draw(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateCrosshair(e); if(drawing) draw(e); });
+        canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener('mouseleave', () => { vCH.style.display = hCH.style.display = 'none'; });
+
+        function draw(e) {
+            if (!drawing) return;
+            const pos = getPos(e);
+            const dx = pos.x - startPos.x;
+            const dy = pos.y - startPos.y;
+            const gamma = Math.abs(Math.atan2(dy, dx));
+            const t_width = (gridSize / 2) / Math.cos(gamma);
+
+            ctx.lineWidth = isGeoMode ? t_width : 2;
+            ctx.lineCap = 'square';
+            ctx.strokeStyle = isLightMode ? '#000' : '#444'; 
+            if (!isGeoMode && !isLightMode) ctx.strokeStyle = '#fff';
+
+            ctx.lineTo(pos.x, pos.y); 
+            ctx.stroke(); 
+            ctx.beginPath(); 
+            ctx.moveTo(pos.x, pos.y);
+            
+            if (isGeoMode) {
+                document.getElementById("stats").innerHTML = `γ: ${gamma.toFixed(2)} | t: ${isFinite(t_width) ? t_width.toFixed(1) : '∞'}`;
+            }
+        }
+
+        function clearPad() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        function qcSaveImage() {
+            const link = document.createElement('a');
+            link.download = 'Wally_Sketch.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>
