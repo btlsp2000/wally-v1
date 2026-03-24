@@ -1,1 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKA Enterprise - PCC Project Portal</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 5px solid #2c3e50;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+            font-weight: normal;
+            text-transform: uppercase;
+        }
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .file-list li {
+            background: #fdfdfd;
+            margin-bottom: 10px;
+            padding: 15px;
+            border: 1px solid #e1e1e1;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-name {
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 15px;
+            color: #2c3e50;
+        }
+        .download-btn {
+            background-color: #3498db;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .download-btn:hover {
+            background-color: #2980b9;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LKA Enterprise</h1>
+        <h2>PCC Project Portal // Secure File Access</h2>
+        
+        <p>Select a file below to securely download the current architectural .dxf layout. These files are generated natively by the WallyCAD engine and are compatible with all industry-standard CAD viewing software.</p>
 
+
+        <ul class="file-list">
+            <li>
+                <span class="file-name">logo.dxf</span>
+                <a href="logo.dxf" class="download-btn" download>Download DXF</a>
+            </li>
+            
+            <li>
+                <span class="file-name">PCC_Wall_Constraints_Base.dxf</span>
+                <a href="PCC_Wall_Constraints_Base.dxf" class="download-btn" download>Download DXF</a>
+            </li>
+
+
+            </ul>
+
+
+        <div class="footer">
+            Engineered by WallyCAD V1 &copy; 2026 LKA Enterprise
+        </div>
+    </div>
+</body>
+</html>
