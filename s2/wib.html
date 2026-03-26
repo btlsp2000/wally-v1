@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC | WIB Archive</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            height: 100vh;
+        }
+
+        /* --- HEADER --- */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2 { color: #4CAF50; margin: 0; }
+
+        .back-btn {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 5px 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .back-btn:active { background-color: #555; }
+
+        /* --- DATA ENTRY CONSOLE --- */
+        .entry-console {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px dashed #555;
+            padding: 15px;
+            background-color: #121212;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            background-color: #2d2d2d;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 12px;
+            font-size: 16px; /* Touch target optimized */
+            font-family: inherit;
+        }
+
+        textarea {
+            width: 100%;
+            background-color: #2d2d2d;
+            color: #00ff00; /* CAD Green for drafting */
+            border: 1px solid #333;
+            padding: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+
+        button.log-btn {
+            background-color: #2d2d2d;
+            color: #d4af37; /* Gold for archive execution */
+            border: 1px solid #d4af37;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        button.log-btn:active {
+            background-color: #d4af37;
+            color: #000;
+        }
+
+        /* --- THE TIMELINE DISPLAY --- */
+        .timeline-container {
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .node-card {
+            background-color: #121212;
+            border-left: 4px solid #4CAF50;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .node-date { color: #00bcd4; font-weight: bold; }
+        .node-location { color: #d4af37; }
+        
+        .node-text {
+            color: #e0e0e0;
+            font-size: 15px;
+            line-height: 1.4;
+            white-space: pre-wrap; /* Preserves your line breaks */
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ff4c4c;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h2>WIB // ARCHIVE</h2>
+        <a href="/qc" class="back-btn"><< BACK TO QC</a>
+    </div>
+
+    <div class="entry-console">
+        <div class="input-row">
+            <input type="text" id="node-date" placeholder="Date/Year (e.g., 1975)">
+            <input type="text" id="node-loc" placeholder="Coordinate (e.g., Riverside)">
+        </div>
+        <textarea id="node-text" placeholder="Transcribe the physical record here..."></textarea>
+        <button class="log-btn" onclick="logNode()">Lock into Grid</button>
+    </div>
+
+    <div class="timeline-container" id="timeline-feed">
+        </div>
+
+    <script>
+        const dateInput = document.getElementById('node-date');
+        const locInput = document.getElementById('node-loc');
+        const textInput = document.getElementById('node-text');
+        const feed = document.getElementById('timeline-feed');
+
+        // 1. Load History from iPad Memory
+        function loadTimeline() {
+            const archive = JSON.parse(localStorage.getItem('s2_wib_archive')) || [];
+            feed.innerHTML = ''; // Clear feed
+
+            archive.forEach((node, index) => {
+                const card = document.createElement('div');
+                card.className = 'node-card';
+                
+                card.innerHTML = `
+                    <div class="node-header">
+                        <span class="node-date">[${node.date}]</span>
+                        <span class="node-location">${node.location}</span>
+                    </div>
+                    <div class="node-text">${node.text}</div>
+                    <button class="delete-btn" onclick="deleteNode(${index})">X</button>
+                `;
+                feed.appendChild(card);
+            });
+        }
+
+        // 2. Lock New Coordinate into Memory
+        function logNode() {
+            let dateVal = dateInput.value.trim();
+            let locVal = locInput.value.trim();
+            let textVal = textInput.value.trim();
+
+            if (!textVal) return; // Don't log empty memories
+
+            // Set fallbacks if you don't input a date or location
+            if (!dateVal) dateVal = "UNDATED";
+            if (!locVal) locVal = "UNKNOWN_GRID";
+
+            const newNode = { date: dateVal, location: locVal.toUpperCase(), text: textVal };
+            const archive = JSON.parse(localStorage.getItem('s2_wib_archive')) || [];
+            
+            // Add to the front of the array so newest entries appear at the top
+            archive.unshift(newNode);
+            localStorage.setItem('s2_wib_archive', JSON.stringify(archive));
+
+            // Clear the console and reload the feed
+            dateInput.value = '';
+            locInput.value = '';
+            textInput.value = '';
+            loadTimeline();
+        }
+
+        // 3. Delete a Coordinate
+        function deleteNode(index) {
+            // Ask for confirmation before wiping history
+            if(confirm("Purge this coordinate from the timeline?")) {
+                const archive = JSON.parse(localStorage.getItem('s2_wib_archive')) || [];
+                archive.splice(index, 1);
+                localStorage.setItem('s2_wib_archive', JSON.stringify(archive));
+                loadTimeline();
+            }
+        }
+
+        // Boot Sequence
+        window.onload = loadTimeline;
+    </script>
+</body>
+</html>
