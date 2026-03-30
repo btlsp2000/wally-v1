@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD - DXF to Code Converter</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; background: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-top: 0; }
+        input[type="file"] { margin-bottom: 20px; font-size: 16px; }
+        textarea { width: 100%; height: 400px; font-family: monospace; font-size: 14px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; }
+        button { background: #2c3e50; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; margin-bottom: 20px;}
+        button:hover { background: #1a252f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>WallyCAD Import: DXF to JS Converter</h2>
+    <p>Upload an ASCII .dxf file. This tool will extract the LINE entities and convert them into <strong>wallyLine()</strong> code.</p>
+    
+    <input type="file" id="dxfUpload" accept=".dxf">
+    <br>
+    <button onclick="copyCode()">Copy WallyCode to Clipboard</button>
+    
+    <textarea id="outputWindow" placeholder="Your wallyLine code will appear here..."></textarea>
+</div>
+
+<script>
+    document.getElementById('dxfUpload').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const lines = e.target.result.split(/\r?\n/).map(line => line.trim());
+            let wallyScript = "// --- WALLYCAD IMPORTED DXF ---\nlet myDrawing = \"\";\n\n";
+            
+            let isLine = false;
+            let currentLine = { x1: 0, y1: 0, x2: 0, y2: 0, layer: "0" };
+
+            // Loop through the DXF file looking for Group Codes
+            for (let i = 0; i < lines.length; i++) {
+                // Find a LINE entity
+                if (lines[i] === "0" && lines[i+1] === "LINE") {
+                    isLine = true;
+                    currentLine = { layer: "0" }; // Reset object for new line
+                    i++; 
+                    continue;
+                }
+
+                // If we are actively parsing a LINE, look for its coordinates
+                if (isLine) {
+                    // Group code 0 means the entity is finished, time to print it
+                    if (lines[i] === "0") {
+                        wallyScript += `myDrawing += wallyLine(${currentLine.x1}, ${currentLine.y1}, ${currentLine.x2}, ${currentLine.y2}, "${currentLine.layer}");\n`;
+                        isLine = false; // Stop parsing this entity
+                    } 
+                    else if (lines[i] === "8") { currentLine.layer = lines[i+1]; }  // Layer Name
+                    else if (lines[i] === "10") { currentLine.x1 = parseFloat(lines[i+1]).toFixed(4); } // Start X
+                    else if (lines[i] === "20") { currentLine.y1 = parseFloat(lines[i+1]).toFixed(4); } // Start Y
+                    else if (lines[i] === "11") { currentLine.x2 = parseFloat(lines[i+1]).toFixed(4); } // End X
+                    else if (lines[i] === "21") { currentLine.y2 = parseFloat(lines[i+1]).toFixed(4); } // End Y
+                }
+            }
+            
+            document.getElementById('outputWindow').value = wallyScript;
+        };
+        
+        reader.readAsText(file);
+    });
+
+    function copyCode() {
+        const copyText = document.getElementById("outputWindow");
+        copyText.select();
+        document.execCommand("copy");
+        alert("WallyCode copied to clipboard!");
+    }
+</script>
+
+</body>
+</html>
