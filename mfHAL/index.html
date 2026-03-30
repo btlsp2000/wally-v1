@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFHAL | Messages from HAL</title>
+    <style>
+        :root {
+            --hal-red: #ff3333;
+            --hal-glow: #801a1a;
+            --bg-black: #0a0a0a;
+            --text-gray: #cccccc;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-gray);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            border: 2px solid var(--hal-red);
+            min-height: 94vh;
+        }
+
+        header {
+            border-bottom: 2px solid var(--hal-red);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--hal-red);
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin: 0;
+            text-shadow: 0 0 10px var(--hal-glow);
+        }
+
+        .status-bar {
+            font-size: 0.8rem;
+            color: var(--hal-glow);
+            margin-top: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .category-box {
+            border: 1px solid var(--hal-glow);
+            padding: 20px;
+            background: rgba(255, 51, 51, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .category-box:hover {
+            border-color: var(--hal-red);
+            background: rgba(255, 51, 51, 0.1);
+            box-shadow: 0 0 15px var(--hal-glow);
+        }
+
+        h2 {
+            color: var(--hal-red);
+            border-bottom: 1px solid var(--hal-glow);
+            padding-bottom: 5px;
+            font-size: 1.2rem;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        a {
+            color: var(--text-gray);
+            text-decoration: none;
+            display: block;
+        }
+
+        a:before {
+            content: "> ";
+            color: var(--hal-red);
+        }
+
+        a:hover {
+            color: #fff;
+            padding-left: 5px;
+        }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.7rem;
+            border-top: 1px solid var(--hal-glow);
+            padding-top: 20px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: var(--hal-red);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Messages from HAL</h1>
+    <div class="status-bar">
+        SYSTEM: ACTIVE | USER: BEI | LOCATION: PORTLAND_MET_113 | <span class="cursor"></span>
+    </div>
+</header>
+
+<div class="grid-container">
+
+    <div class="category-box">
+        <h2>[01] THE LAB: CODE</h2>
+        <ul>
+            <li><a href="projects/wallycad.html">WallyCAD / Wally (Release: April 1)</a></li>
+            <li><a href="projects/btlsp.html">BTLSP Routines</a></li>
+            <li><a href="projects/squarefont.html">SquareFont (5x5 Grid)</a></li>
+            <li><a href="projects/autolisp.html">AutoLISP / AutoCAD Tools</a></li>
+        </ul>
+    </div>
+
+    <div class="category-box">
+        <h2>[02] THE HALL: GEOMETRY</h2>
+        <ul>
+            <li><a href="books/calculus-of-pool.html">The Calculus of Pool</a></li>
+            <li><a href="pool/tournaments.html">Tournament Records (Eugene/Vegas)</a></li>
+            <li><a href="pool/9-ball-theory.html">9-Ball Physics & Theory</a></li>
+        </ul>
+    </div>
+
+    <div class="category-box">
+        <h2>[03] THE NARRATIVE: MEMOIRS</h2>
+        <ul>
+            <li><a href="memoirs/golden-triangle.html">The Golden Triangle</a></li>
+            <li><a href="memoirs/the-setup.html">The Set-up?</a></li>
+            <li><a href="memoirs/greyhound-diaries.html">Travels & The Grand Loop</a></li>
+        </ul>
+    </div>
+
+    <div class="category-box">
+        <h2>[04] THE SHOP: WOODWORKING</h2>
+        <ul>
+            <li><a href="shop/murphy-bed.html">The Murphy Bed Project</a></li>
+            <li><a href="shop/kitchen-cabinets.html">Kitchen Cabinet Designs</a></li>
+            <li><a href="shop/custom-desk.html">Draftsman's Desk Build</a></li>
+        </ul>
+    </div>
+
+</div>
+
+<footer>
+    <p>PROPERTY OF MFHAL SYSTEMS &copy; 2026 | "I'm sorry, Dave. I'm afraid I can't do that."</p>
+</footer>
+
+</body>
+</html>
