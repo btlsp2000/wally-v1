@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WALLY V12.2 | WHITEPRINT</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <style>
+        /* --- COLOR THEME: WHITEPRINT --- */
+        :root { 
+            --bg: #ffffff; /* White Background */
+            --panel: #f0f0f0; /* Light Gray Panel */
+            --accent: #005fcc; /* Blue Accent */
+            --text: #1e1e1e; /* Dark Text */
+            --active: #0078d7; /* Active State */
+            --border: #ccc; /* Light Border */
+            --print: #ffc107; /* Print Accent */
+            --geo-sel-cl: #005fcc; /* Selected Centerline */
+            --geo-sel-out: #000000; /* Selected Outline (Black) */
+            --geo-unsel-cl: #999999; /* Unselected Centerline */
+            --geo-unsel-out: #555555; /* Unselected Outline */
+        }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', monospace; display: flex; height: 100vh; overflow: hidden; }
+        
+        #sidebar { width: 340px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 2; }
+        #main-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; }
+        
+        .header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #e6e6e6; }
+        h1 { margin: 0; font-size: 16px; letter-spacing: 1px; color: var(--accent); }
+        .menu-btn { cursor: pointer; color: #666; font-size: 18px; }
+
+        /* --- PLOTTER PANEL --- */
+        #plotter { padding: 10px; background: #f8f8f8; border-bottom: 1px solid var(--border); border-left: 3px solid var(--print); }
+        .plot-title { font-size: 10px; font-weight: bold; color: var(--print); margin-bottom: 5px; text-transform: uppercase; }
+        
+        .control-row { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
+        .label-sm { font-size: 10px; color: #666; font-weight: 600; text-transform: uppercase; min-width: 45px; }
+        input, select { background: #fff; border: 1px solid #ccc; color: var(--text); padding: 4px; font-size: 11px; outline: none; flex: 1; }
+        
+        button { background: #e6e6e6; color: var(--text); border: 1px solid #ccc; padding: 6px; cursor: pointer; font-size: 10px; flex: 1; transition: 0.2s; }
+        button:hover { background: #d4d4d4; }
+        button.print-btn { background: var(--print); color: #1e1e1e; font-weight: bold; border: none; margin-top: 5px; }
+
+        /* --- Standard UI --- */
+        #entity-list { flex-grow: 1; overflow-y: auto; padding: 10px; background: var(--panel); }
+        .entity-item { padding: 8px; border-bottom: 1px solid #ddd; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; }
+        .entity-item.selected { background: #e6e6e6; border-left: 3px solid var(--accent); }
+        .btn-del { color: #d9534f; font-weight: bold; padding: 0 5px; }
+        
+        #editor { height: 35%; border-top: 2px solid var(--border); padding: 15px; background: #e6e6e6; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+        textarea { width: 100%; height: 60px; background: #fff; border: 1px solid var(--border); color: var(--text); font-family: monospace; padding: 5px; font-size: 10px; resize: none; outline: none; }
+        
+        /* --- VIEWPORT (WHITE BACKGROUND) --- */
+        #viewport { flex-grow: 1; position: relative; background: radial-gradient(#ccc 1px, transparent 1px), var(--bg); background-size: 30px 30px; overflow: hidden; }
+        canvas { display: block; position: absolute; top: 0; left: 0; }
+        
+        #library { position: absolute; top: 50px; left: 10px; width: 200px; background: #f0f0f0; border: 1px solid var(--accent); display: none; z-index: 10; padding: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+        .lib-item { padding: 5px; border-bottom: 1px solid #ccc; cursor: pointer; font-size: 11px; }
+        .lib-item:hover { color: var(--accent); background: #e6e6e6; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="header">
+            <h1>WALL-V <span>12.2</span></h1>
+            <div class="menu-btn" onclick="toggleLibrary()">&#9776;</div>
+        </div>
+
+        <div id="plotter">
+            <div class="plot-title">Print / Export PDF</div>
+            <div class="control-row">
+                <span class="label-sm">Paper</span>
+                <select id="paperSize">
+                    <option value="LETTER">Letter (8.5x11)</option>
+                    <option value="TABLOID">Tabloid (11x17)</option>
+                    <option value="A4">A4 (210x297)</option>
+                    <option value="A3">A3 (297x420)</option>
+                </select>
+                <select id="paperOrient" style="flex:0.5">
+                    <option value="L">Land.</option>
+                    <option value="P">Port.</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <span class="label-sm">Units</span>
+                <select id="unitMap">
+                    <option value="IN">1 Unit = 1 Inch</option>
+                    <option value="MM">1 Unit = 1 mm</option>
+                    <option value="FT">1 Unit = 1 Foot</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <span class="label-sm">Scale</span>
+                <input type="text" id="printScale" value="1:10" placeholder="e.g. 1:50">
+                <button onclick="autoFitScale()">AUTO FIT</button>
+            </div>
+            <button class="print-btn" onclick="exportPDF()">DOWNLOAD PDF HARDCOPY</button>
+        </div>
+
+        <div id="entity-list"></div>
+        <button onclick="addEntity('New Wall')" style="margin:10px; background:transparent; border:1px dashed #999; color:var(--active);">+ NEW ENTITY</button>
+
+        <div id="editor">
+            <div class="control-row"><span class="label-sm">Name</span><input type="text" id="propName" onchange="updateEntity()"></div>
+            <div class="control-row"><span class="label-sm">Type</span><select id="propType" onchange="updateEntity()"><option value="WALL">Wall</option><option value="TAPER">Taper</option></select></div>
+            <div class="control-row">
+                <span class="label-sm">Start T</span><input type="number" id="propThickStart" step="0.1" onchange="updateEntity()">
+                <span class="label-sm">End T</span><input type="number" id="propThickEnd" step="0.1" onchange="updateEntity()">
+            </div>
+            <textarea id="propPath" spellcheck="false" oninput="updateEntity()"></textarea>
+            <button onclick="centerView()" style="background:var(--accent); color:white; font-weight:bold;">CENTER VIEW</button>
+        </div>
+    </div>
+
+    <div id="library">
+        <div style="font-weight:bold; margin-bottom:5px; color:var(--accent);">PRESETS</div>
+        <div class="lib-item" onclick="loadPreset('TRIANGLE')">Isosceles Triangle</div>
+        <div class="lib-item" onclick="loadPreset('SNAKE')">Stair Plan</div>
+        <div class="lib-item" onclick="loadPreset('ZIGZAG')">Stair Elev</div>
+        <div class="lib-item" onclick="loadPreset('RECT')">Room Rect</div>
+        <div class="lib-item" onclick="loadPreset('TEST')">Math Test (x=2.92)</div>
+    </div>
+
+    <div id="main-area"><div id="viewport"><canvas id="canvas"></canvas></div></div>
+
+<script>
+let entities = [];
+let selectedId = null;
+let view = { x: 0, y: 0, scale: 5.0, dragging: false, lastX: 0, lastY: 0 };
+
+window.onload = function() {
+    addEntity("Main Wall");
+    loadPreset('TRIANGLE');
+    centerView();
+};
+
+function getBounds() {
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    let valid = false;
+    entities.forEach(ent => {
+        const geo = ComputeGeometry(ent.rawText, ent.thickStart, ent.thickEnd);
+        if(geo) {
+            geo.points.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+            });
+            valid = true;
+        }
+    });
+    return valid ? { minX, maxX, minY, maxY, w: maxX-minX, h: maxY-minY } : null;
+}
+
+function autoFitScale() {
+    const b = getBounds();
+    if(!b) return;
+    const pSize = document.getElementById('paperSize').value;
+    const orient = document.getElementById('paperOrient').value;
+    let pW = 8.5, pH = 11;
+    if(pSize === 'TABLOID') { pW = 11; pH = 17; }
+    if(pSize === 'A4') { pW = 8.27; pH = 11.69; }
+    if(pSize === 'A3') { pW = 11.69; pH = 16.53; }
+    if(orient === 'L') { let t = pW; pW = pH; pH = t; }
+    const safeW = pW - 1.0, safeH = pH - 1.0;
+    const unitMap = document.getElementById('unitMap').value;
+    let geoW_in = b.w, geoH_in = b.h;
+    if(unitMap === 'MM') { geoW_in /= 25.4; geoH_in /= 25.4; }
+    if(unitMap === 'FT') { geoW_in *= 12; geoH_in *= 12; }
+    const fitScale = Math.min(safeW / geoW_in, safeH / geoH_in);
+    const oneToX = 1 / fitScale;
+    document.getElementById('printScale').value = `1:${oneToX.toFixed(1)}`;
+}
+
+function exportPDF() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("SYSTEM ERROR: PDF Engine not loaded.\nCheck internet connection or firewall.");
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const orient = document.getElementById('paperOrient').value === 'L' ? 'l' : 'p';
+    const format = document.getElementById('paperSize').value.toLowerCase();
+    const doc = new jsPDF({ orientation: orient, unit: 'in', format: format });
+    const scaleStr = document.getElementById('printScale').value;
+    let scaleRatio = 1.0;
+    if(scaleStr.includes(':')) { const parts = scaleStr.split(':'); scaleRatio = parseFloat(parts[0]) / parseFloat(parts[1]); }
+    else { scaleRatio = parseFloat(scaleStr); }
+    const unitMap = document.getElementById('unitMap').value;
+    let uMult = 1.0; 
+    if(unitMap === 'MM') uMult = 0.03937;
+    if(unitMap === 'FT') uMult = 12.0;
+    const b = getBounds();
+    if(!b) { alert("No geometry!"); return; }
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const cx = pageWidth / 2, cy = pageHeight / 2;
+    const geoCx = (b.minX + b.maxX) / 2, geoCy = (b.minY + b.maxY) / 2;
+    const toPdf = (x, y) => {
+        const dx = (x - geoCx) * uMult * scaleRatio;
+        const dy = (y - geoCy) * uMult * scaleRatio; 
+        return { x: cx + dx, y: cy - dy }; 
+    };
+    doc.setLineWidth(0.01);
+    doc.setDrawColor(0, 0, 0); // Black lines for PDF
+    entities.forEach(ent => {
+        const geo = ComputeGeometry(ent.rawText, ent.thickStart, ent.thickEnd);
+        if(!geo) return;
+        const drawLoop = (pts) => {
+            for(let i=0; i<pts.length; i++) {
+                const p1 = toPdf(pts[i].x, pts[i].y);
+                const nextPt = pts[(i+1)%pts.length];
+                const p2 = toPdf(nextPt.x, nextPt.y);
+                if(i < pts.length - 1 || geo.isClosed) { doc.line(p1.x, p1.y, p2.x, p2.y); }
+            }
+        };
+        drawLoop(geo.joints.map(j => j.L));
+        drawLoop(geo.joints.map(j => j.R));
+        if(!geo.isClosed) {
+            const Ls = geo.joints.map(j => j.L);
+            const Rs = geo.joints.map(j => j.R);
+            const sL=toPdf(Ls[0].x, Ls[0].y), sR=toPdf(Rs[0].x, Rs[0].y);
+            doc.line(sL.x, sL.y, sR.x, sR.y);
+            const eL=toPdf(Ls[Ls.length-1].x, Ls[Ls.length-1].y), eR=toPdf(Rs[Rs.length-1].x, Rs[Rs.length-1].y);
+            doc.line(eL.x, eL.y, eR.x, eR.y);
+        }
+    });
+    doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(`WALL-V PLOT | Scale ${scaleStr} | Unit: 1=${unitMap}`, 0.5, pageHeight - 0.5);
+    doc.setDrawColor(0,0,0);
+    doc.line(pageWidth - 2.5, pageHeight - 0.5, pageWidth - 1.5, pageHeight - 0.5);
+    doc.text("1 INCH CHECK", pageWidth - 2.5, pageHeight - 0.55);
+    doc.save('wally_hardcopy.pdf');
+}
+
+function addEntity(name, type="WALL") { const id = Date.now().toString(); entities.push({ id, name, type, points:[], thickStart:2.0, thickEnd:2.0, rawText:"0,0\n50,0" }); selectEntity(id); renderList(); }
+function deleteEntity(e, id) { e.stopPropagation(); entities=entities.filter(e=>e.id!==id); if(entities.length===0) addEntity("New"); else selectEntity(entities[0].id); renderList(); draw(); }
+function selectEntity(id) { selectedId=id; const e=entities.find(e=>e.id===id); if(e){ document.getElementById('propName').value=e.name; document.getElementById('propType').value=e.type; document.getElementById('propThickStart').value=e.thickStart; document.getElementById('propThickEnd').value=e.thickEnd; document.getElementById('propPath').value=e.rawText; renderList(); } }
+function updateEntity() { const e=entities.find(e=>e.id===selectedId); if(e){ e.name=document.getElementById('propName').value; e.type=document.getElementById('propType').value; e.thickStart=parseFloat(document.getElementById('propThickStart').value); e.thickEnd=parseFloat(document.getElementById('propThickEnd').value); e.rawText=document.getElementById('propPath').value; if(e.type==='WALL')e.thickEnd=e.thickStart; renderList(); draw(); } }
+function renderList() { const l=document.getElementById('entity-list'); l.innerHTML=''; entities.forEach(e=>{ const d=document.createElement('div'); d.className=`entity-item ${e.id===selectedId?'selected':''}`; d.onclick=()=>selectEntity(e.id); d.innerHTML=`<span>${e.name}</span><span class='btn-del' onclick="deleteEntity(event,'${e.id}')">�</span>`; l.appendChild(d); }); }
+function toggleLibrary() { const l=document.getElementById('library'); l.style.display=l.style.display==='block'?'none':'block'; }
+function loadPreset(k) {
+    let t="",n="Obj",ty="WALL",ts=2,te=2;
+    if(k==='TRIANGLE'){ n="Isosceles Tri"; ty="TAPER"; ts=40; te=0; t="0,0\n0,50"; }
+    else if(k==='SNAKE'){ n="Stair Plan"; ts=0.1; te=0.1; let c=["0,0","47,0"]; for(let i=1;i<8;i++){let y=i*11; if(i%2!==0){c.push(`47,${y}`);c.push(`0,${y}`);}else{c.push(`0,${y}`);c.push(`47,${y}`);}} t=c.join('\n'); }
+    else if(k==='ZIGZAG'){ n="Stair Elev"; let c=["0,0"]; for(let i=0;i<8;i++){c.push(`${i*11},${(i*7)+7}`);c.push(`${(i*11)+11},${(i*7)+7}`);} t=c.join('\n'); }
+    else if(k==='RECT'){ n="Room"; t="0,0\n50,0\n50,40\n0,40\n0,0"; }
+    else if(k==='TEST'){ n="Constraint"; t="0,0\n0.2,0\n0.4,0\n0.6,0\n3.526,0\n8.5,0"; }
+    const e=entities.find(e=>e.id===selectedId); if(e){e.name=n;e.type=ty;e.thickStart=ts;e.thickEnd=te;e.rawText=t;selectEntity(selectedId);draw();}
+    document.getElementById('library').style.display='none';
+}
+
+class M { constructor(x,y){this.x=x;this.y=y} add(v){return new M(this.x+v.x,this.y+v.y)} sub(v){return new M(this.x-v.x,this.y-v.y)} mul(s){return new M(this.x*s,this.y*s)} div(s){return new M(this.x/s,this.y/s)} cross(v){return (this.x*v.y)-(this.y*v.x)} mag(){return Math.sqrt(this.x**2+this.y**2)} norm(){const m=this.mag();return m===0?new M(0,0):this.div(m)} perp(){return new M(-this.y,this.x)} dot(v){return (this.x*v.x)+(this.y*v.y)} }
+function VIA(P1,v1,P2,v2,th){ const det=v1.cross(v2); if(Math.abs(det)<1e-9)return null; const t=(P2.sub(P1).x*v2.y - P2.sub(P1).y*v2.x)/det; const I=P1.add(v1.mul(t)); const mv=v1.mul(-1).add(v2).norm(); const sm=(th/2)/Math.sqrt(1-v1.mul(-1).dot(mv)**2); return {I, In:I.add(mv.mul(sm)), Out:I.sub(mv.mul(sm)), Turn:det>0?'L':'R'}; }
+function ComputeGeometry(txt,tS,tE){
+    const pts=[]; txt.replace(/[\t\n\r,]+/g,' ').replace(/\s+/g,' ').trim().split(' ').forEach((v,i,a)=>{if(i%2===0 && a[i+1]) pts.push(new M(parseFloat(v),parseFloat(a[i+1]))) });
+    if(pts.length<2)return null;
+    const N=pts.length; const th=[]; for(let i=0;i<N;i++) th.push(tS+(tE-tS)*(i/(N-1)));
+    const j=[]; const cl=pts[0].sub(pts[N-1]).mag()<1e-4;
+    for(let i=0;i<N;i++){
+        let pp=i===0?null:pts[i-1], pn=i===N-1?null:pts[i+1], vin, vout, res;
+        if(cl){ pp=pts[(i-1+N)%N]; pn=pts[(i+1)%N]; }
+        if(pp) vin=pts[i].sub(pp).norm(); if(pn) vout=pn.sub(pts[i]).norm();
+        const T=th[i];
+        if(pp&&pn){ const v=VIA(pp,vin,pts[i],vout,T); if(v) res=v.Turn==='L'?{L:v.In,R:v.Out}:{L:v.Out,R:v.In}; else{const p=vin.perp(); res={L:pts[i].add(p.mul(T/2)),R:pts[i].sub(p.mul(T/2))}} }
+        else if(!pp){const p=vout.perp(); res={L:pts[i].add(p.mul(T/2)),R:pts[i].sub(p.mul(T/2))}}
+        else{const p=vin.perp(); res={L:pts[i].add(p.mul(T/2)),R:pts[i].sub(p.mul(T/2))}}
+        j.push(res);
+    }
+    return {points:pts, joints:j, isClosed:cl};
+}
+const canvas=document.getElementById('canvas'); const ctx=canvas.getContext('2d');
+function centerView(){ const b=getBounds(); if(!b)return; const cx=(b.minX+b.maxX)/2, cy=(b.minY+b.maxY)/2; view.scale=Math.min((canvas.width-50)/b.w, (canvas.height-50)/b.h); view.x=(canvas.width/2)-(cx*view.scale); view.y=(canvas.height/2)+(cy*view.scale); draw(); }
+function draw(){
+    canvas.width=canvas.parentElement.clientWidth; canvas.height=canvas.parentElement.clientHeight;
+    ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save(); ctx.translate(view.x,view.y); ctx.scale(view.scale,-view.scale);
+    entities.forEach(e=>{
+        const g=ComputeGeometry(e.rawText,e.thickStart,e.thickEnd); if(!g)return;
+        const sel=e.id===selectedId; 
+        // --- BLACK LINES ON WHITE BG ---
+        ctx.strokeStyle=sel?'var(--geo-sel-cl)':'var(--geo-unsel-cl)'; ctx.lineWidth=1/view.scale; ctx.setLineDash([5/view.scale]);
+        ctx.beginPath(); g.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle=sel?'var(--geo-sel-out)':'var(--geo-unsel-out)'; ctx.lineWidth=(sel?2:1)/view.scale;
+        const dp=(a)=>{ctx.beginPath(); a.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); if(g.isClosed)ctx.closePath(); ctx.stroke();}
+        dp(g.joints.map(j=>j.L)); dp(g.joints.map(j=>j.R));
+    });
+    ctx.restore();
+}
+canvas.addEventListener('mousedown',e=>{view.dragging=true;view.lx=e.clientX;view.ly=e.clientY});
+canvas.addEventListener('mousemove',e=>{if(view.dragging){view.x+=e.clientX-view.lx;view.y+=e.clientY-view.ly;view.lx=e.clientX;view.ly=e.clientY;draw()}});
+canvas.addEventListener('mouseup',()=>view.dragging=false);
+canvas.addEventListener('wheel',e=>{view.scale*=e.deltaY<0?1.1:0.9;draw()});
+window.onresize=draw;
+</script>
+</body>
+</html>
