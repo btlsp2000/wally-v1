@@ -4,12 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learn to Use the Computer Without Sweating - LKA Project</title>
+    <title>Learn to Use the Computer Without Sweating</title>
 
     <!-- Consolidated Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Allerta+Stencil&family=Shadows+Into+Light&family=Rock+Salt&display=swap" rel="stylesheet">
 
     <style>
+        /* Base Reset & Background */
         body {
             margin: 0;
             padding: 0;
@@ -19,6 +20,7 @@
             font-family: Arial, sans-serif;
         }
 
+        /* Layout Container */
         .main-wrapper {
             width: 720px;
             margin: 0 auto;
@@ -30,6 +32,7 @@
             width: 100%;
         }
 
+        /* Typography & Styles */
         .header-scramble {
             width: 100%;
             background-color: #000;
@@ -43,6 +46,15 @@
             padding: 10px;
         }
 
+        .dc { 
+            float: left; 
+            color: #903; 
+            font-size: 40px; 
+            line-height: 40px;
+            padding: 0 3px;
+            font-family: 'Shadows Into Light', cursive; 
+        }
+
         a {
             text-decoration: none;
             color: #000;
@@ -53,6 +65,7 @@
             text-decoration: underline;
         }
 
+        /* Interaction Elements */
         #myBtn {
             display: none;
             position: fixed;
@@ -90,17 +103,16 @@
             height: 4px;
             background-color: darkgreen;
         }
-
-        .quiz-feedback {
-            display: none;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #333;
-            background: #fff;
-        }
     </style>
 
     <script type="text/javascript">
+        // Navigation and Utility functions
+        function goToAnchor() {
+            if(window.location.hash) {
+                // Allows the page to jump to #start on load
+            }
+        }
+
         function topFunction() {
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
@@ -113,26 +125,16 @@
                 btn.style.display = "none";
             }
         };
-
-        function checkQuiz(answer) {
-            var feedback = document.getElementById("quiz-result");
-            feedback.style.display = "block";
-            if(answer === 'correct') {
-                feedback.innerHTML = "<b style='color:green;'>CORRECT!</b> AI uses patterns to predict the best response.";
-            } else {
-                feedback.innerHTML = "<b style='color:red;'>INCORRECT.</b> Try again! Hint: AI is more than just a calculator.";
-            }
-        }
     </script>
 </head>
 
-<body>
+<body onload="goToAnchor()">
 
 <button onclick="topFunction()" id="myBtn" title="Go to top">TOP</button>
 
 <div class="main-wrapper">
     
-    <!-- Header -->
+    <!-- Top Nav/Logo Area -->
     <table id="start">
         <tr>
             <td bgcolor="#ccddee" width="60" height="60">
@@ -147,6 +149,7 @@
     <img src="https://see.fontimg.com/api/renderfont4/KVBe/eyJyIjoiZnMiLCJoIjo4NywidyI6MTMzMSwiZnMiOjY1LCJmZ2MiOiIjRkZGRkZGIiwiYmdjIjoiIzM1M0Q0QiIsInQiOjF9/TFRVVENXUw/scramble.png" alt="Header" class="header-scramble">
     <br>
 
+    <!-- Main Title -->
     <table>
         <tr>
             <td height="60" bgcolor="aqua" align="center">
@@ -156,26 +159,34 @@
         <tr><td bgcolor="#000" height="2"></td></tr>
     </table>
 
-    <!-- Lessons List -->
+    <!-- Table of Contents -->
     <table>
         <tr>
             <td width="60" class="content-box"></td>
             <td width="420" class="content-box">
-<pre>
+                <pre>
 <hr>
-1  <a href="http://www.explainthatstuff.com/howcomputerswork.html">Computer Basics</a> 
-2  <a href="http://www.computerhope.com/shortcut.htm">Keyboard Skills</a> 
-3  <a href="#ai-section"><b>Artificial Intelligence (AI)</b></a> <b>NEW!</b>
-4  <a href="#adv">Advanced Topics</a>
-5  <a href="#quiz">Take the Quiz</a>
+1  <a href="http://www.explainthatstuff.com/howcomputerswork.html">Computer</a> 
+2  <a href="http://www.computerhope.com/shortcut.htm">Keyboard</a> 
+3  <a href="http://lifehacker.com/5825771/how-to-take-a-screenshot-or-picture-of-whats-on-your-computer-screen">Screen</a> 
+4  <a href="http://www.cefls.org/esenior_1_4_mouse.htm">Mouse</a> 
+5  <a href="http://www.gcflearnfree.org/internet101/2">Internet</a> 
+6  <a href="https://www.steadyrain.com/digital-clarity/blog/entryid/1263/ins-and-outs-of-email-types.aspx">Email</a> 
+7  <a href="http://www.gcflearnfree.org/windows8">Windows 8</a> 
+8  <a href="http://www.computerhope.com/issues/ch000760.htm">Pictures</a> 
+9  MS Word
+10 <a href="https://www.craigslist.org/about/factsheet">Craigslist</a> 
+11 <a href="http://www.computerhope.com/issues/ch000306.htm">Function Keys</a> 
+12 <a href="http://www.computerhope.com/shortcut.htmKeyboard">Shortcut keys</a> 
+13 <a href="#adv"><b>Advanced Topics</b></a>
 <hr>
-</pre>
+                </pre>
             </td>
             <td width="240" class="content-box"></td>
         </tr>
     </table>
 
-    <!-- Status Bar -->
+    <!-- Date & Footer Credit -->
     <table>
         <tr>
             <td height="25" width="360" bgcolor="#fff" style="padding-left:10px;">
@@ -196,54 +207,46 @@
 
     <div class="section-break"></div>
 
-    <!-- AI Lesson Section -->
-    <table id="ai-section">
-        <tr><td bgcolor="#008b8b" height="2"></td></tr>
-        <tr>
-            <td width="60" class="content-box"></td>
-            <td class="content-box">
-<pre>
-<font color="darkgreen" size="2"><u>TOPIC: ARTIFICIAL INTELLIGENCE</u></font>
-<div class="green-hr"></div>
-AI is a program that can "think" and "learn" from patterns. 
-Unlike standard software, AI can predict your next word, 
-create images from descriptions, and solve complex problems.
-
-<b>Key Safety Tips:</b>
-- Never give AI your passwords.
-- Always check if the information is accurate.
-- Use "Prompts" (specific questions) for better results.
-
-<hr>
-&#9654; <a href="#quiz">Test your AI knowledge below</a>
-</pre>
-            </td>
-            <td width="60" class="content-box"></td>
-        </tr>
-    </table>
-
-    <div class="section-break"></div>
-
-    <!-- Quiz Section -->
-    <table id="quiz">
+    <!-- Advanced Section -->
+    <table id="adv">
         <tr><td bgcolor="#000" height="2"></td></tr>
         <tr>
             <td width="60" class="content-box"></td>
             <td class="content-box">
-<pre>
-<font color="darkgreen" size="2"><u>QUIZ: TEST YOURSELF</u></font>
-<div class="green-hr"></div>
-<b>Question: How does AI generate answers?</b>
-
-<a href="javascript:void(0)" onclick="checkQuiz('wrong')">A) It uses a giant hidden calculator.</a>
-
-<a href="javascript:void(0)" onclick="checkQuiz('correct')">B) It recognizes patterns in data to predict responses.</a>
-
-<a href="javascript:void(0)" onclick="checkQuiz('wrong')">C) A human is typing back to you in real-time.</a>
-
-<div id="quiz-result" class="quiz-feedback"></div>
+                <pre>
 <br>
-</pre>
+<u><b>ADVANCED TOPICS</b></u>
+<div class="green-hr"></div>
+1 <a href="http://www.thesitewizard.com/gettingstarted/startwebsite.shtml">Making a web page</a>
+2 <a href="#">Security & Privacy</a>
+3 <a href="#">Understanding Systems</a>
+<br>
+                </pre>
+            </td>
+            <td width="60" class="content-box"></td>
+        </tr>
+        <tr><td bgcolor="#000" height="4"></td></tr>
+    </table>
+
+    <div class="section-break"></div>
+
+    <!-- Introduction Section -->
+    <table>
+        <tr><td bgcolor="#008b8b" height="2"></td></tr>
+        <tr>
+            <td width="60" class="content-box"></td>
+            <td class="content-box">
+                <pre>
+<font color="darkgreen"><b>INTRODUCTION</b></font>
+<div class="green-hr"></div>
+Using the computer, some places you will go everyday, some only 
+occasionally and some only once. It's kind of a game, or puzzle. 
+How do I get to where I want to go and how do I do what I want to do, 
+when I get there?
+
+<hr>
+&#9654; <a href="epl1.pdf">Download PDF Version</a>
+                </pre>
             </td>
             <td width="60" class="content-box"></td>
         </tr>
@@ -251,6 +254,53 @@ create images from descriptions, and solve complex problems.
 
     <div class="section-break"></div>
 
+    <!--================ AI SECTION =================-->
+<table id="ai-section">
+  <tr><td height="50" width="720" bgcolor="#ccddee"></td></tr>
+</table>
+
+<table><tr><td bgcolor="#008b8b" height="2" width="720"></td></tr></table>
+
+<table>
+<tr>
+<td bgcolor="#ffebcd" width="60"></td>
+<td align="left" valign="top" bgcolor="#ffebcd" width="420">
+<pre>
+
+<font color="darkgreen" size="2"><u>TOPIC 14: ARTIFICIAL INTELLIGENCE</u></font>
+
+<hr size="4" color="darkgreen">
+<b>What is AI?</b>
+AI is a program that can "think" and "learn" from vast amounts 
+of data. Unlike a regular program that only does exactly 
+what it's told, AI can predict, create, and solve problems 
+using natural language (like you are talking to a person).
+
+<b>Common AI Tools:</b>
+* <b>Generative AI:</b> Tools like Gemini or ChatGPT that write 
+  essays, emails, or even computer code.
+* <b>Image Creators:</b> Programs that turn "text descriptions" 
+  into full digital paintings.
+* <b>Voice Assistants:</b> Siri, Alexa, and Google Assistant.
+
+<b>How to use it safely:</b>
+1. <b>Verify Facts:</b> AI can sometimes "hallucinate" (make 
+   up facts that sound true). Always double-check.
+2. <b>Privacy:</b> Do not share personal passwords or private 
+   bank details with an AI.
+3. <b>Prompts:</b> The better your "prompt" (instruction), 
+   the better the AI's answer will be.
+
+<hr>
+   &#9654; <a href="https://www.google.com/search?q=what+is+generative+ai" target="_blank">Learn more about Generative AI</a>
+<hr>
+</pre>
+</td>
+<td bgcolor="#ffebcd" width="240"></td>
+</tr>
+</table>
+    
 </div>
+
 </body>
 </html>
