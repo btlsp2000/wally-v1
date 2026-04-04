@@ -3,25 +3,27 @@
 <head>
     <style>
         body { background: #1a1a1a; color: #e0e0e0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        canvas { border: 1px solid #444; background: #000; margin: 20px; box-shadow: 0 0 15px rgba(0,255,204,0.2); }
-        textarea { width: 450px; height: 50px; background: #222; color: #0f0; border: 1px solid #444; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-        .output-box { width: 450px; background: #222; border-left: 4px solid #00ffcc; padding: 15px; margin-top: 10px; color: #00ffcc; font-size: 0.9em; white-space: pre-wrap; }
-        input[type="range"] { width: 450px; cursor: pointer; }
-        h2 { color: #00ffcc; margin-bottom: 10px; }
+        canvas { border: 1px solid #444; background: #000; margin: 20px; }
+        textarea { width: 500px; height: 100px; background: #222; color: #0f0; border: 1px solid #444; padding: 10px; margin-bottom: 10px; border-radius: 4px; resize: vertical; }
+        .output-box { width: 500px; background: #111; border-left: 4px solid #f1c40f; padding: 15px; margin-top: 10px; color: #f1c40f; font-size: 0.95em; white-space: pre-wrap; word-break: break-all; }
+        input[type="range"] { width: 500px; }
+        h2 { color: #f1c40f; margin-bottom: 5px; }
+        label { align-self: flex-start; margin-left: calc(50% - 250px); margin-bottom: 5px; font-size: 0.8em; color: #888; }
     </style>
 </head>
 <body>
-    <h2>WallyCAD 2D Rotation Engine</h2>
+    <h2>WallyCAD Point Rotator</h2>
     
-    <label>Input Points (x,y; x,y...):</label>
-    <textarea id="pointsInput">60,-20; -80,-50; -50,70; 40,80</textarea>
+    <label>INPUT (X Y X Y ... or columns):</label>
+    <textarea id="pointsInput" placeholder="Enter coordinates separated by spaces...">60 -20 -80 -50 -50 70 40 80</textarea>
     
     <input type="range" id="gamma" min="0" max="360" value="45">
     <p>Angle γ: <span id="angleDisplay">45</span>°</p>
 
     <canvas id="cvs" width="400" height="400"></canvas>
 
-    <div id="textOutput" class="output-box">Rotated Points: (calculating...)</div>
+    <label>OUTPUT (Rotated X Y):</label>
+    <div id="textOutput" class="output-box"></div>
 
 <script>
     const canvas = document.getElementById('cvs');
@@ -32,43 +34,54 @@
     const textOutput = document.getElementById('textOutput');
 
     function process() {
-        // 1. Parse Input
-        const raw = input.value.split(';').map(pair => pair.split(',').map(Number));
+        // 1. Parse Input: Split by any whitespace and filter out empty strings
+        const rawValues = input.value.trim().split(/\s+/).map(Number).filter(n => !isNaN(n));
+        
+        // Group into 2D tuples [x, y]
+        const pointSet = [];
+        for (let i = 0; i < rawValues.length; i += 2) {
+            if (rawValues[i+1] !== undefined) {
+                pointSet.push([rawValues[i], rawValues[i+1]]);
+            }
+        }
+
         const gamma = parseFloat(slider.value);
         display.innerText = gamma;
 
-        // 2. Math Setup
+        // 2. Rotation Math
         const rad = (Math.PI / 180) * gamma;
         const cos = Math.cos(rad);
         const sin = Math.sin(rad);
 
-        // 3. Transform & Format Text
-        const rotated = raw.map(([x, y]) => {
-            const nx = x * cos - y * sin;
-            const ny = x * sin + y * cos;
-            return [nx.toFixed(2), ny.toFixed(2)];
+        const rotated = pointSet.map(([x, y]) => {
+            return [
+                (x * cos - y * sin).toFixed(4),
+                (x * sin + y * cos).toFixed(4)
+            ];
         });
 
-        // Update Text Display
-        const tupleString = rotated.map(pt => `(${pt[0]}, ${pt[1]})`).join(", ");
-        textOutput.innerText = `ROTATED SET (γ=${gamma}°):\n${tupleString}`;
+        // 3. Output Whitespace Delimited String
+        // Joins all coordinates into one flat space-separated string
+        const outputString = rotated.flat().join(" ");
+        textOutput.innerText = outputString;
 
-        // 4. Render Visuals
+        // 4. Visual Render
         ctx.clearRect(0,0,400,400);
         ctx.save();
         ctx.translate(200, 200); 
-        ctx.scale(1, -1); // Maintain Cartesian Y-up
+        ctx.scale(1, -1); // Cartesian Y-up
 
-        ctx.strokeStyle = '#00ffcc';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        rotated.forEach((pt, i) => {
-            if (i === 0) ctx.moveTo(pt[0], pt[1]);
-            else ctx.lineTo(pt[0], pt[1]);
-        });
-        ctx.closePath();
-        ctx.stroke();
-        
+        if (rotated.length > 0) {
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            rotated.forEach((pt, i) => {
+                if (i === 0) ctx.moveTo(pt[0], pt[1]);
+                else ctx.lineTo(pt[0], pt[1]);
+            });
+            ctx.closePath();
+            ctx.stroke();
+        }
         ctx.restore();
     }
 
