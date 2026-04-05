@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD - Orion Array Gen</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #121212; color: #00ff00; padding: 15px; }
+        .control-panel { max-width: 450px; margin: auto; border: 1px solid #333; padding: 20px; background: #1a1a1a; }
+        .input-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        input { background: #000; color: #0f0; border: 1px solid #0f0; width: 70px; padding: 4px; text-align: center; }
+        textarea { width: 100%; height: 300px; background: #000; color: #fff; border: 1px solid #444; margin-top: 15px; font-size: 12px; }
+        button { width: 100%; background: #00ff00; color: #000; border: none; padding: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #fff; }
+        .header { border-bottom: 1px solid #0f0; margin-bottom: 15px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+<div class="control-panel">
+    <div class="header">
+        <span style="font-weight:bold;">ORION SOLAR ARRAYS</span>
+        <span style="font-size:10px;">v1.0.10 COMPATIBLE</span>
+    </div>
+
+    <div class="input-row">
+        <span>Arrays (H):</span> 
+        <input type="number" id="H" value="4">
+    </div>
+    <div class="input-row">
+        <span>Capsule Rad (a):</span> 
+        <input type="number" id="a" value="2.8" step="0.1">
+    </div>
+    <div class="input-row">
+        <span>Panel Length (b):</span> 
+        <input type="number" id="b" value="6.0" step="0.1">
+    </div>
+    <div class="input-row">
+        <span>Panel Width (t):</span> 
+        <input type="number" id="t" value="1.5" step="0.1">
+    </div>
+    <div class="input-row">
+        <span>Clock Angle (&phi;):</span> 
+        <input type="number" id="phi" value="45">
+    </div>
+
+    <button onclick="generateOrion()">GENERATE ARRAYS</button>
+
+    <textarea id="output" readonly placeholder="Coordinate Tuples..."></textarea>
+</div>
+
+<script>
+    function generateOrion() {
+        const H = parseInt(document.getElementById('H').value);
+        const a = parseFloat(document.getElementById('a').value); // Radius offset
+        const b = parseFloat(document.getElementById('b').value); // Length
+        const t = parseFloat(document.getElementById('t').value); // Width
+        const phi = parseFloat(document.getElementById('phi').value); // Base Rotation
+        
+        const baseRad = phi * (Math.PI / 180);
+        const stepRad = (2 * Math.PI) / H;
+        let finalOutput = "";
+
+        for (let i = 0; i < H; i++) {
+            let theta = baseRad + (i * stepRad);
+            let cos = Math.cos(theta);
+            let sin = Math.sin(theta);
+
+            // Calculate 4 corners of the rectangular panel relative to origin
+            // Translation is built into the polar conversion (a * cos)
+            
+            // Corner 1: Inner Left
+            let x1 = (a * cos - (t/2) * sin).toFixed(4);
+            let y1 = (a * sin + (t/2) * cos).toFixed(4);
+            
+            // Corner 2: Inner Right
+            let x2 = (a * cos + (t/2) * sin).toFixed(4);
+            let y2 = (a * sin - (t/2) * cos).toFixed(4);
+            
+            // Corner 3: Outer Right
+            let x3 = ((a + b) * cos + (t/2) * sin).toFixed(4);
+            let y3 = ((a + b) * sin - (t/2) * cos).toFixed(4);
+            
+            // Corner 4: Outer Left
+            let x4 = ((a + b) * cos - (t/2) * sin).toFixed(4);
+            let y4 = ((a + b) * sin + (t/2) * cos).toFixed(4);
+
+            // Build individual polyline block
+            let block = "";
+            block += `${x1} ${y1}\n`;
+            block += `${x2} ${y2}\n`;
+            block += `${x3} ${y3}\n`;
+            block += `${x4} ${y4}\n`;
+            block += `${x1} ${y1}\n`; // Close loop
+            
+            // Append with double newline delimiter
+            finalOutput += block + "\n";
+        }
+
+        document.getElementById('output').value = finalOutput.trim();
+    }
+</script>
+
+</body>
+</html>
