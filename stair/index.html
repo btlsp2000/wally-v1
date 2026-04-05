@@ -2,52 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WallyCAD - Zigzag Tuple Gen</title>
+    <title>WallyCAD - Reverse Loop Gen</title>
     <style>
-        body { font-family: 'Courier New', monospace; background: #1a1a1a; color: #00ff00; padding: 20px; }
-        .container { max-width: 600px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; }
-        label { display: inline-block; width: 100px; margin-bottom: 10px; }
-        input { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px; margin-bottom: 10px; width: 80px; }
-        textarea { width: 100%; height: 300px; background: #000; color: #fff; border: 1px solid #555; padding: 10px; margin-top: 10px; font-size: 14px; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0c0; }
+        body { font-family: 'Courier New', monospace; background: #121212; color: #00ff00; padding: 20px; }
+        .box { max-width: 500px; margin: auto; border: 1px dashed #00ff00; padding: 20px; }
+        input { background: #000; color: #0f0; border: 1px solid #0f0; width: 50px; margin: 5px; }
+        textarea { width: 100%; height: 350px; background: #000; color: #fff; border: 1px solid #444; margin-top: 15px; }
+        button { width: 100%; background: #00ff00; color: #000; border: none; padding: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Stair Zigzag (H Treads)</h2>
-    <label>Treads (H):</label> <input type="number" id="H" value="6"><br>
-    <label>Rise (a):</label>    <input type="number" id="a" value="7"><br>
-    <label>Depth (b):</label>   <input type="number" id="b" value="11"><br>
-    <button onclick="generateTuples()">Generate Tuples</button>
-
-    <textarea id="output" readonly placeholder="Output will appear here..."></textarea>
+<div class="box">
+    <h3>Zigzag & Reverse Loop</h3>
+    H (Treads): <input type="number" id="H" value="3">
+    a (Rise):   <input type="number" id="a" value="7">
+    b (Depth):  <input type="number" id="b" value="11">
+    t (Thick):  <input type="number" id="t" value="2">
+    
+    <button onclick="generate()">Run Counter Pattern</button>
+    <textarea id="output" readonly></textarea>
 </div>
 
 <script>
-    function generateTuples() {
+    function generate() {
         const H = parseInt(document.getElementById('H').value);
         const a = parseFloat(document.getElementById('a').value);
         const b = parseFloat(document.getElementById('b').value);
+        const t = parseFloat(document.getElementById('t').value);
         
-        let x = 0;
-        let y = 0;
-        let results = ["0 0"]; // Starting tuple
+        let x = 0, y = 0;
+        let pts = [[0, 0]]; // Point 1
 
+        // 1. FORWARD RUN (Outward)
         for (let n = 1; n <= H; n++) {
-            // Step i: Horizontal (b)
             x += b;
-            results.push(`${x} ${y}`);
-
-            // Step j: Vertical Toggle (a / -a)
-            // Following your sketch logic: 1st is +a, 2nd is -a (back to base)
-            let direction = (n % 2 !== 0) ? 1 : -1;
-            y += (a * direction);
-            results.push(`${x} ${y}`);
+            pts.push([x, y]); // Horizontal
+            let dir = (n % 2 !== 0) ? 1 : -1;
+            y += (a * dir);
+            pts.push([x, y]); // Vertical
         }
 
-        document.getElementById('output').value = results.join('\n');
+        // 2. TURNAROUND (Point 7 in sketch)
+        // Adjust Y by thickness 't' to start the return path
+        y -= t;
+        pts.push([x, y]);
+
+        // 3. REVERSE LOOP (Inward / Counter Pattern)
+        for (let n = H; n >= 1; n--) {
+            x -= b;
+            pts.push([x, y]); // Horizontal back
+            
+            // Mirror the vertical toggle
+            let dir = (n % 2 !== 0) ? -1 : 1; 
+            y += (a * dir);
+            
+            // Close logic: if we are back at X=0, snap to Y=0
+            if (x <= 0) {
+                pts.push([0, 0]);
+            } else {
+                pts.push([x, y]);
+            }
+        }
+
+        // Output as whitespace delimited tuples
+        document.getElementById('output').value = pts.map(p => p.join(' ')).join('\n');
     }
 </script>
 
