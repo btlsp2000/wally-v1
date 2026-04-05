@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD - Zigzag Tuple Gen</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #1a1a1a; color: #00ff00; padding: 20px; }
+        .container { max-width: 600px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; }
+        label { display: inline-block; width: 100px; margin-bottom: 10px; }
+        input { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px; margin-bottom: 10px; width: 80px; }
+        textarea { width: 100%; height: 300px; background: #000; color: #fff; border: 1px solid #555; padding: 10px; margin-top: 10px; font-size: 14px; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0c0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Stair Zigzag (H Treads)</h2>
+    <label>Treads (H):</label> <input type="number" id="H" value="6"><br>
+    <label>Rise (a):</label>    <input type="number" id="a" value="7"><br>
+    <label>Depth (b):</label>   <input type="number" id="b" value="11"><br>
+    <button onclick="generateTuples()">Generate Tuples</button>
+
+    <textarea id="output" readonly placeholder="Output will appear here..."></textarea>
+</div>
+
+<script>
+    function generateTuples() {
+        const H = parseInt(document.getElementById('H').value);
+        const a = parseFloat(document.getElementById('a').value);
+        const b = parseFloat(document.getElementById('b').value);
+        
+        let x = 0;
+        let y = 0;
+        let results = ["0 0"]; // Starting tuple
+
+        for (let n = 1; n <= H; n++) {
+            // Step i: Horizontal (b)
+            x += b;
+            results.push(`${x} ${y}`);
+
+            // Step j: Vertical Toggle (a / -a)
+            // Following your sketch logic: 1st is +a, 2nd is -a (back to base)
+            let direction = (n % 2 !== 0) ? 1 : -1;
+            y += (a * direction);
+            results.push(`${x} ${y}`);
+        }
+
+        document.getElementById('output').value = results.join('\n');
+    }
+</script>
+
+</body>
+</html>
