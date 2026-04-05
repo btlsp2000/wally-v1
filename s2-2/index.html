@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD S2 - Integrated System</title>
+    <style>
+        :root { --accent: #0f0; --bg: #000; --panel: #0a0a0a; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg); overflow: hidden; font-family: 'Courier New', monospace; }
+        
+        .toolbar { height: 35px; background: #111; display: flex; align-items: center; border-bottom: 1px solid #333; padding: 0 10px; gap: 8px; }
+        .s2-wrapper { display: flex; width: 100vw; height: calc(100vh - 35px); position: relative; }
+        
+        iframe { flex: 1; border: none; background: var(--panel); transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .divider { width: 2px; background: var(--accent); z-index: 5; box-shadow: 0 0 5px var(--accent); }
+
+        button { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; padding: 3px 10px; font-size: 11px; text-transform: uppercase; }
+        button:hover { background: var(--accent); color: #000; }
+        .brand { color: #fff; font-size: 12px; font-weight: bold; margin-right: 15px; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <span class="brand">WALLYCAD S2</span>
+        <button onclick="swap()">Swap L/R</button>
+        <button onclick="focusPane('L')">Focus L (80/20)</button>
+        <button onclick="focusPane('R')">Focus R (80/20)</button>
+        <button onclick="resetPanes()">Reset</button>
+    </div>
+
+    <div class="s2-wrapper">
+        <iframe src="menu-l.html" id="paneL" name="paneL"></iframe>
+        <div class="divider"></div>
+        <iframe src="menu-r.html" id="paneR" name="paneR"></iframe>
+    </div>
+
+    <script>
+        const pL = document.getElementById('paneL');
+        const pR = document.getElementById('paneR');
+
+        function swap() {
+            const temp = pL.src;
+            pL.src = pR.src;
+            pR.src = temp;
+        }
+
+        function focusPane(side) {
+            if(side === 'L') { pL.style.flex = "4"; pR.style.flex = "1"; }
+            else { pL.style.flex = "1"; pR.style.flex = "4"; }
+        }
+
+        function resetPanes() {
+            pL.style.flex = "1";
+            pR.style.flex = "1";
+        }
+    </script>
+</body>
+</html>
