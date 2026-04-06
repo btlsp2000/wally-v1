@@ -80,6 +80,18 @@
     const ctx = canvas.getContext('2d');
     const previewCanvas = document.getElementById('headerPreviewCanvas');
     const pCtx = previewCanvas.getContext('2d');
+
+    canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    
+    // Constraints to keep it within the 0-4 range
+    const gridX = Math.max(0, Math.min(x, gridSize - 1));
+    const gridY = Math.max(0, Math.min(y, gridSize - 1));
+    
+    document.getElementById('coord-display').innerText = `X: ${gridX}, Y: ${gridY}`;
+});
     
     const gridSize = 5;
     const cellSize = canvas.width / gridSize;
