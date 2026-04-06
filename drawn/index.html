@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD | SqFont Generator</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #e0e0e0; }
+        
+        /* 1. THE COMMAND STRIP (HEADER) */
+        header { 
+            display: flex; align-items: center; gap: 20px; padding: 10px 20px; 
+            background: #f8f8f8; border-bottom: 2px solid #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #preview-box { border: 2px solid #333; background: #fff; width: 50px; height: 50px; display: flex; }
+        .controls { display: flex; align-items: center; gap: 10px; }
+        select, button { padding: 8px; font-weight: bold; cursor: pointer; border: 2px solid #333; }
+        button:hover { background: #ddd; }
+        
+        /* SUCCESS LIGHT */
+        #status-area { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 0.8em; font-weight: bold; color: #555; }
+        #status-light { width: 14px; height: 14px; background: #bbb; border-radius: 50%; border: 2px solid #333; transition: background 0.3s; }
+
+        /* 2. THE WORKSPACE */
+        main { display: flex; flex: 1; justify-content: center; align-items: center; gap: 40px; padding: 20px; }
+        #grid-canvas { background: #fff; border: 2px solid #333; cursor: crosshair; box-shadow: 10px 10px 0px #bbb; }
+        
+        .info-panel { width: 250px; padding: 20px; background: #fff; border: 2px solid #333; font-family: monospace; font-size: 0.9em; }
+        hr { border: 1px solid #333; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <!-- Header Preview -->
+    <div id="preview-box">
+        <canvas id="headerPreviewCanvas" width="50" height="50"></canvas>
+    </div>
+
+    <div class="controls">
+        <label for="char-select">GLYPH:</label>
+        <select id="char-select">
+            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+            <option value="D">D</option><option value="E">E</option><option value="F">F</option>
+            <option value="0">0</option><option value="1">1</option><option value="ORION">ORION</option>
+        </select>
+
+        <button onclick="triggerSave()">SAVE TO /GLYPHS</button>
+        <button onclick="clearWorkspace()" style="background: #ffcccc;">CLEAR</button>
+    </div>
+
+    <div id="status-area">
+        <span id="status-text">NW-LIB | READY</span>
+        <div id="status-light"></div>
+    </div>
+</header>
+
+<main>
+    <!-- Main 5x5 Grid Drafting Area -->
+    <canvas id="grid-canvas" width="400" height="400"></canvas>
+
+    <div class="info-panel">
+        <strong>WALLY-DRAWN</strong><br>
+        LOC: NW Portland Lib<br>
+        SQFONT: 5x5 Matrix<br>
+        <hr>
+        <strong>ARTEMIS II Msn:</strong><br>
+        ID: Orion Integrity<br>
+        STATUS: Moon Encounter<br>
+        <hr>
+        <em>"Boy is Joy"</em>
+    </div>
+</main>
+
+<script>
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    const previewCanvas = document.getElementById('headerPreviewCanvas');
+    const pCtx = previewCanvas.getContext('2d');
+    
+    const gridSize = 5;
+    const cellSize = canvas.width / gridSize;
+    let currentGridState = []; // Stores [x, y] of active nodes
+
+    // Initial Draw
+    drawGrid();
+
+    // Handle Click on Grid
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / cellSize);
+        const y = Math.floor((e.clientY - rect.top) / cellSize);
+        
+        toggleNode(x, y);
+    });
+
+    function toggleNode(x, y) {
+        const index = currentGridState.findIndex(node => node[0] === x && node[1] === y);
+        if (index > -1) {
+            currentGridState.splice(index, 1);
+        } else {
+            currentGridState.push([x, y]);
+        }
+        render();
+    }
+
+    function render() {
+        drawGrid();
+        drawNodes();
+        updatePreview();
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#ccc";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= gridSize; i++) {
+            ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(canvas.width, i * cellSize); ctx.stroke();
+        }
+    }
+
+    function drawNodes() {
+        ctx.fillStyle = "#333";
+        currentGridState.forEach(([x, y]) => {
+            ctx.fillRect(x * cellSize + 5, y * cellSize + 5, cellSize - 10, cellSize - 10);
+        });
+    }
+
+    function updatePreview() {
+        pCtx.clearRect(0, 0, 50, 50);
+        pCtx.fillStyle = "#000";
+        currentGridState.forEach(([x, y]) => {
+            pCtx.fillRect(x * 10, y * 10, 8, 8);
+        });
+    }
+
+    function clearWorkspace() {
+        currentGridState = [];
+        render();
+        console.log("Workspace Cleared.");
+    }
+
+    function triggerSave() {
+        if (currentGridState.length === 0) return;
+
+        const charName = document.getElementById('char-select').value;
+        const glyphData = {
+            metadata: { project: "WallyCAD", seed: "Kenton", location: "NW-Lib" },
+            char: charName,
+            nodes: currentGridState
+        };
+
+        // File Download Trigger
+        const blob = new Blob([JSON.stringify(glyphData, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${charName.toLowerCase()}.json`;
+        link.click();
+
+        // Silent Visual Success
+        flashSuccess();
+        clearWorkspace();
+    }
+
+    function flashSuccess() {
+        const light = document.getElementById('status-light');
+        const text = document.getElementById('status-text');
+        
+        light.style.background = "#2ecc71"; // Success Green
+        text.innerText = "SAVED TO /GLYPHS";
+
+        setTimeout(() => {
+            light.style.background = "#bbb";
+            text.innerText = "NW-LIB | READY";
+        }, 1500);
+    }
+</script>
+
+</body>
+</html>
