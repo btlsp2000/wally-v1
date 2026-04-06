@@ -78,8 +78,7 @@
         
         <canvas id="wallyCanvas" width="850" height="400"></canvas>
         
-        <textarea id="commandInput" spellcheck="false">
-// WALLYCAD STANDALONE TEST
+<textarea id="commandInput" spellcheck="false">
 // 1. Draw the left half
 Wally Line 0,0 / 10,0
 Wally Line 10,0 / 10,20
@@ -88,6 +87,13 @@ Wally Circle 5,5 / 2
 
 // 2. Reflect across the X=10 axis
 Wally Mirror X, 10
+        </textarea>
+
+        <textarea id="tupleOutput" readonly placeholder="Cartesian Tuples Output..." style="background: #e8e8e8; margin-top: 10px;"></textarea>
+        
+        <div class="controls">
+            <button onclick="executeEngine()">Render to Viewport</button>
+        </div>
 
 // 3. Reflect the whole thing downward
 Wally Mirror Y, -5
