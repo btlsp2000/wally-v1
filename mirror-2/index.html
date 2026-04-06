@@ -109,11 +109,40 @@ Wally Mirror Y, -5
         const ctx = canvas.getContext('2d');
         let elements = [];
 
+        /*
         function executeEngine() {
             const rawText = document.getElementById('commandInput').value;
             parsePayload(rawText);
             drawExtents();
         }
+        */
+
+        function executeEngine() {
+            const rawText = document.getElementById('commandInput').value;
+            parsePayload(rawText);
+            drawExtents();
+            generateTuples(); // NEW: Trigger the tuple output
+        }
+
+        // --- NEW: THE TUPLE GENERATOR ---
+        function generateTuples() {
+            let outputText = "// GENERATED COORDINATE TUPLES\n";
+            
+            elements.forEach(el => {
+                if (el.type === 'line') {
+                    // Formatted as: L: (x1, y1) -> (x2, y2)
+                    // .toFixed(4) cleans up floating point math artifacts from mirroring
+                    outputText += `L: (${el.x1.toFixed(4)}, ${el.y1.toFixed(4)}) -> (${el.x2.toFixed(4)}, ${el.y2.toFixed(4)})\n`;
+                } else if (el.type === 'circle') {
+                    // Formatted as: C: (cx, cy) R: r
+                    outputText += `C: (${el.cx.toFixed(4)}, ${el.cy.toFixed(4)}) R: ${el.r.toFixed(4)}\n`;
+                }
+            });
+            
+            document.getElementById('tupleOutput').value = outputText;
+        }
+
+        // --- THE CARTESIAN PARSER (Remains the same) ---
 
         // --- THE CARTESIAN PARSER ---
         function parsePayload(text) {
