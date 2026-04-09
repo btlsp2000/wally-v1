@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD V1.3 | SquareFont Engine</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        canvas { background: #000; border: 2px solid #444; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .controls { margin: 20px; padding: 15px; background: #333; border-radius: 8px; }
+        input { background: #222; color: #4CAF50; border: 1px solid #444; padding: 5px; width: 400px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <h2>WallyCAD V1.3 Standalone Engine</h2>
+    
+    <div class="controls">
+        <label>QC String: </label>
+        <input type="text" id="qcInput" value="-4,4,0 -3,-4,9 -2,0,5 -1,-4,9 0,0,0 2,0,0 0,-4,9 4,-4,9 4,0,0 8,-4,9 8,0,0 14,-4,9 14,-2,5 12,0,0 16,4,0">
+        <button onclick="updateRender()">Render</button>
+    </div>
+
+    <canvas id="wallyBoard" width="800" height="400"></canvas>
+
+    <script>
+        // --- INTEGRATED ENGINE LOGIC ---
+        const WallyCAD = {
+            settings: { thickness: 0.4, scale: 30, offsetX: 300, offsetY: 250 },
+
+            calculateTransition(prev, curr, next) {
+                if (curr.i === 0) return null;
+                const T = this.settings.thickness;
+                const I = curr.i / 9;
+
+                const vA = { x: prev.x - curr.x, y: prev.y - curr.y };
+                const vB = { x: next.x - curr.x, y: next.y - curr.y };
+                const magA = Math.sqrt(vA.x**2 + vA.y**2);
+                const magB = Math.sqrt(vB.x**2 + vB.y**2);
+
+                const dot = (vA.x * vB.x + vA.y * vB.y) / (magA * magB);
+                const theta = Math.acos(Math.max(-1, Math.min(1, dot)));
+                const d_off = (T / 2 * (1 / Math.tan(theta / 2))) * I;
+
+                return [
+                    { x: curr.x + (vA.x / magA) * d_off, y: curr.y + (vA.y / magA) * d_off },
+                    { x: curr.x + (vB.x / magB) * d_off, y: curr.y + (vB.y / magB) * d_off }
+                ];
+            },
+
+            generatePath(qcString) {
+                const nodes = qcString.trim().split(/\s+/).map(s => {
+                    const [x, y, i] = s.split(',').map(Number);
+                    return { x, y, i: i || 0 };
+                });
+
+                let refinedPath = [];
+                for (let n = 0; n < nodes.length; n++) {
+                    const curr = nodes[n], prev = nodes[n-1], next = nodes[n+1];
+                    if (!prev || !next || curr.i === 0) refinedPath.push(curr);
+                    else {
+                        const pts = this.calculateTransition(prev, curr, next);
+                        refinedPath.push(pts[0], pts[1]);
+                    }
+                }
+                return refinedPath;
+            }
+        };
+
+        function updateRender() {
+            const canvas = document.getElementById('wallyBoard');
+            const ctx = canvas.getContext('2d');
+            const qcStr = document.getElementById('qcInput').value;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const path = WallyCAD.generatePath(qcStr);
+            const S = WallyCAD.settings.scale;
+
+            ctx.beginPath();
+            ctx.lineWidth = WallyCAD.settings.thickness * S;
+            ctx.strokeStyle = "#4CAF50";
+            ctx.lineJoin = "miter";
+
+            path.forEach((pt, idx) => {
+                const x = WallyCAD.settings.offsetX + (pt.x * S);
+                const y = WallyCAD.settings.offsetY - (pt.y * S);
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        // Initial Boot
+        updateRender();
+    </script>
+</body>
+</html>
