@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WALLY V1.0.10 | INTEGRATED STABLE</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <style>
+        /* CSS remains identical to v1.0.10 core to preserve UI/UX */
+        :root { --bg: #222; --cad-bg: #121212; --cmd-bg: #333; --accent: #61afef; --text: #eee; --dim: #888; --sel: #98c379; --print: #e5c07b; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+        #toolbar { height: 40px; background: #2c2c2c; border-bottom: 1px solid #444; display: flex; align-items: center; padding: 0 10px; gap: 5px; flex-shrink: 0; z-index: 1000; position: relative; }
+        .menu-btn { cursor: pointer; color: var(--accent); font-size: 20px; font-weight: bold; padding: 0 5px; z-index: 9999; }
+        #workspace { flex-grow: 1; display: flex; position: relative; overflow: hidden; }
+        #sidebar { width: 260px; background: #252526; border-right: 1px solid #444; display: flex; flex-direction: column; z-index: 2; overflow-y: auto; }
+        #canvas-area { flex-grow: 1; position: relative; background: var(--cad-bg); cursor: crosshair; }
+        #cmd-bar { height: 30px; background: var(--cmd-bg); border-top: 1px solid #555; display: flex; align-items: center; padding: 0 5px; font-size: 12px; flex-shrink: 0; }
+        button { background: #444; border: 1px solid #555; color: #ddd; padding: 4px 8px; font-family: inherit; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #555; border-color: var(--accent); }
+        .panel { padding: 10px; border-bottom: 1px solid #333; }
+        .panel-title { font-size: 11px; font-weight: bold; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        input, select, textarea { background: #111; border: 1px solid #444; color: var(--accent); padding: 4px; font-family: inherit; font-size: 11px; width: 100%; box-sizing: border-box; }
+        #cmd-prompt { color: var(--dim); margin-right: 5px; font-weight: bold; }
+        #cmd-input { border: none; background: transparent; color: white; font-size: 12px; flex-grow: 1; outline: none; }
+        .overlay-bg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
+        .overlay-content { background: #1e1e1e; width: 85%; max-width: 800px; height: 85%; overflow-y: auto; padding: 40px; border: 1px solid var(--accent); position: relative; display: flex; flex-direction: column; }
+        #nice-title { position: fixed; background: #1e1e1e; color: var(--accent); border: 1px solid #444; padding: 5px 8px; font-family: 'Consolas', monospace; font-size: 11px; font-weight: bold; pointer-events: none; z-index: 10000; display: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.8); white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <div class="menu-btn" onclick="toggleLibrary()">☰</div>
+        <span style="font-weight:bold; color:var(--accent); margin-right:10px;">WALLY v1.0.10</span>
+        <button onclick="fileNew()">NEW</button>
+        <button onclick="fileSave()">SAVE</button>
+        <button onclick="fileLoad()">LOAD</button>
+        <span style="width:1px; height:20px; background:#444; margin:0 5px;"></span>
+        <button onclick="exec('WALL')">WALL</button>
+        <button onclick="exec('CIRCLE')" style="color:#56b6c2;">CIRCLE</button>
+        <button onclick="exec('STAIR')" style="color:#d19a66;">STAIR</button>
+        <button onclick="exec('SWITCH')" style="color:#f0f;">SWITCHBACK</button>
+        <button onclick="exec('IMG')" style="color:#98c379;">IMAGE</button>
+        <span style="width:1px; height:20px; background:#444; margin:0 5px;"></span>
+        <button onclick="exportDXF()" style="color:var(--sel);">DXF</button>
+        <button onclick="exec('HAL')">HAL VIEW</button>
+        <button onclick="exec('HELP')" style="border-color:var(--accent); color:var(--accent);">MANUAL</button>
+    </div>
+
+    <div id="workspace">
+        <div id="sidebar">
+            <div class="panel" style="border-left: 3px solid var(--print);">
+                <div class="panel-title" style="color:var(--print);">PLOT SETTINGS</div>
+                <div class="control-row"><button onclick="exportPDF()" style="background:var(--print); color:#111; font-weight:bold;">PDF PLOT</button></div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">PROPERTIES</div>
+                <div class="control-row"><span class="label-sm">Type</span><select id="prop-type" onchange="updateProp()"><option value="WALL">Wall</option><option value="CIRCLE">Circle</option><option value="STAIR">Stair</option><option value="IMAGE">Image</option></select></div>
+                <div class="control-row"><span class="label-sm">W/R</span><input id="prop-thick" type="number" step="0.1" oninput="updateProp()"></div>
+                <div class="control-row"><span class="label-sm">D/T</span><input id="prop-thickEnd" type="number" step="0.1" oninput="updateProp()"></div>
+                <textarea id="prop-geo" style="height:100px;" oninput="updateProp()"></textarea>
+            </div>
+            <div class="panel">
+                <div class="panel-title">LAYERS</div>
+                <div id="layer-list"></div>
+            </div>
+        </div>
+        <div id="canvas-area">
+            <canvas id="canvas"></canvas>
+            <div id="hal-exit" onclick="exec('HAL')">X</div>
+        </div>
+    </div>
+
+    <div id="cmd-bar">
+        <span id="cmd-prompt">COMMAND:</span>
+        <input id="cmd-input" type="text" autocomplete="off" placeholder="MATRIX dX dY Deg | SWITCH H b a g | IMG url...">
+        <span id="cmd-history" style="color:#666; margin-left:10px;"></span>
+    </div>
+
+<script>
+// ==========================================
+// CORE STATE & IMAGE EXTENSION
+// ==========================================
+let state = {
+    ents: [],
+    layers: { '0': { color: '#ffffff', visible: true }, 'WALLS': { color: '#61afef', visible: true }, 'STAIRS': { color: '#d19a66', visible: true } },
+    currentLayer: '0', selection: null, 
+    view: { x: 0, y: 0, scale: 5, panStart: null },
+    backgroundImage: null, bgParams: { x: 0, y: 0, scale: 100, alpha: 0.5 } 
+};
+
+// ==========================================
+// INTEGRATED MATH: MATRIX & SWITCHBACK
+// ==========================================
+function applyMatrix(geoTxt, dx, dy, deg) {
+    const rad = deg * (Math.PI / 180);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const pts = geoTxt.trim().split(/[\s,]+/).map(Number);
+    let result = [];
+    for (let i = 0; i < pts.length; i += 2) {
+        let x = pts[i], y = pts[i + 1];
+        if (isNaN(x) || isNaN(y)) continue;
+        let rx =
