@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | List Value Transformer</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: 'Courier New', monospace; padding: 40px; }
+        .container { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border: 1px solid #444; }
+        textarea { width: 100%; height: 100px; background: #000; color: #4CAF50; border: 1px solid #555; padding: 10px; margin-bottom: 10px; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #45a049; }
+        .output { margin-top: 20px; padding: 10px; background: #333; border-left: 4px solid #4CAF50; min-height: 50px; word-wrap: break-word; }
+        h2 { border-bottom: 1px solid #444; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>WallyCAD: Mod Value Step 3</h2>
+    <p>Enter a comma-separated list (e.g., 10, 20, 30, 40, 50, 60):</p>
+    
+    <textarea id="listInput">10, 20, 0, 40, 50, 0, 70, 80, 0</textarea>
+    
+    <label>New value for every 3rd item:</label>
+    <input type="text" id="newValue" value="9" style="width: 40px; margin-bottom: 10px;">
+    
+    <br>
+    <button onclick="transformList()">Transform Every 3rd Value</button>
+
+    <div class="output" id="resultDisplay">Result will appear here...</div>
+</div>
+
+<script>
+    function transformList() {
+        // 1. Get input and convert to array
+        let rawInput = document.getElementById('listInput').value;
+        let changeTo = document.getElementById('newValue').value;
+        
+        // Clean up input: split by comma and trim whitespace
+        let list = rawInput.split(',').map(item => item.trim());
+
+        // 2. OPTION 1 LOGIC: Modify in-place using a step-3 loop
+        // We start at index 2 (the 3rd item) and increment by 3
+        for (let i = 2; i < list.length; i += 3) {
+            list[i] = changeTo;
+        }
+
+        // 3. Display Result
+        document.getElementById('resultDisplay').innerText = list.join(', ');
+    }
+</script>
+
+</body>
+</html>
