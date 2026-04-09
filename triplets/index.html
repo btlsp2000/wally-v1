@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | Triplet Grouper</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: monospace; padding: 20px; text-align: center; }
+        .box { background: #222; border: 1px solid #444; padding: 20px; display: inline-block; width: 80%; }
+        textarea { width: 90%; height: 100px; background: #000; color: #4CAF50; border: 1px solid #555; }
+        .out { margin-top: 20px; padding: 10px; background: #333; color: #fff; border: 1px dashed #4CAF50; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px; cursor: pointer; margin: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>WallyCAD Triplet Grouper</h2>
+    <p>Converts a flat list into X,Y,I groups:</p>
+    <textarea id="rawInput" placeholder="10,20,9,30,40,0,50,60,5"></textarea>
+    <br>
+    <button onclick="process()">Group Every 3rd Value</button>
+    <div class="out" id="output">Result will appear here...</div>
+</div>
+
+<script>
+    function process() {
+        let input = document.getElementById('rawInput').value.trim();
+        let parts = input.split(',');
+        let out = [];
+        
+        for (let i = 0; i < parts.length; i += 3) {
+            // Slice the next 3 items and join them with commas
+            let triplet = parts.slice(i, i + 3).join(',');
+            out.push(triplet);
+        }
+        
+        // Join all triplets with a space
+        document.getElementById('output').innerText = out.join(' ');
+    }
+</script>
+
+</body>
+</html>
