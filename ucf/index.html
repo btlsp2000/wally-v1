@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | Universal Cusp Fixer</title>
+    <style>
+        body { background: #1a1a1a; color: #4CAF50; font-family: monospace; padding: 40px; }
+        .panel { background: #222; border: 1px solid #444; padding: 20px; max-width: 700px; margin: auto; }
+        textarea { width: 100%; height: 120px; background: #000; color: #fff; border: 1px solid #555; padding: 10px; margin: 10px 0; }
+        button { background: #4CAF50; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; }
+        .result { margin-top: 20px; padding: 15px; background: #111; border-left: 4px solid #4CAF50; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h2>WallyCAD V1.3: Universal Cusp Fix</h2>
+    <p>Paste your raw X,Y,I list to force Intensity 9 (Full Transition) & Group triplets:</p>
+    
+    <textarea id="rawInput">-4,0,5,-3,-4,5,-2,0,5,-1,-4,5,0,0,5,2,0,5,0,-4,5,1,-2,5</textarea>
+    
+    <button onclick="fixCusps()">APPLY UNIVERSAL INTENSITY & GROUP</button>
+
+    <div class="result" id="output">Updated QC String will appear here...</div>
+</div>
+
+<script>
+    function fixCusps() {
+        let input = document.getElementById('rawInput').value;
+        // 1. Flatten into array
+        let rawArray = input.split(/[ ,]+/).filter(Boolean);
+
+        // 2. UNIVERSAL UPDATE: Set every 3rd value (index 2, 5, 8...) to 9
+        for (let i = 2; i < rawArray.length; i += 3) {
+            rawArray[i] = "9"; 
+        }
+
+        // 3. TRIPLET MAKER & COMMA DELETION: Group into space-delimited X,Y,9
+        let grouped = [];
+        for (let j = 0; j < rawArray.length; j += 3) {
+            let triplet = rawArray.slice(j, j + 3).join(',');
+            grouped.push(triplet);
+        }
+
+        document.getElementById('output').innerText = grouped.join(' ');
+    }
+</script>
+
+</body>
+</html>
