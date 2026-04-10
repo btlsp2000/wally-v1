@@ -2,40 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WallyCAD | Triplet Grouper</title>
+    <title>WallyCAD | Universal Intensity Update</title>
     <style>
-        body { background: #1a1a1a; color: #fff; font-family: monospace; padding: 20px; text-align: center; }
-        .box { background: #222; border: 1px solid #444; padding: 20px; display: inline-block; width: 80%; }
-        textarea { width: 90%; height: 100px; background: #000; color: #4CAF50; border: 1px solid #555; }
-        .out { margin-top: 20px; padding: 10px; background: #333; color: #fff; border: 1px dashed #4CAF50; }
-        button { background: #4CAF50; color: white; border: none; padding: 10px; cursor: pointer; margin: 10px; }
+        body { background: #1a1a1a; color: #fff; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+        .panel { background: #222; border: 1px solid #444; padding: 25px; width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        textarea { width: 100%; height: 120px; background: #000; color: #4CAF50; border: 1px solid #555; padding: 10px; box-sizing: border-box; font-size: 14px; }
+        .input-row { margin: 15px 0; display: flex; align-items: center; justify-content: space-between; }
+        input { background: #333; color: #fff; border: 1px solid #555; padding: 8px; width: 60px; text-align: center; font-size: 18px; font-weight: bold; }
+        button { background: #4CAF50; color: white; border: none; padding: 12px 20px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #45a049; }
+        .result-box { margin-top: 20px; padding: 15px; background: #111; border-left: 4px solid #4CAF50; word-break: break-all; color: #ddd; font-size: 14px; }
+        label { color: #aaa; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>WallyCAD Triplet Grouper</h2>
-    <p>Converts a flat list into X,Y,I groups:</p>
-    <textarea id="rawInput" placeholder="10,20,9,30,40,0,50,60,5"></textarea>
-    <br>
-    <button onclick="process()">Group Every 3rd Value</button>
-    <div class="out" id="output">Result will appear here...</div>
-</div>
+    <div class="panel">
+        <h2 style="margin-top:0; color:#4CAF50;">Universal QC Updater</h2>
+        <label>Raw Coordinate List (X,Y,I,X,Y,I...):</label>
+        <textarea id="dataInput" placeholder="-4,4,0,-3,-4,0,-2,0,0"></textarea>
+
+        <div class="input-row">
+            <label>Set All Intensities (I) to:</label>
+            <input type="number" id="uniValue" value="9" min="0" max="9">
+        </div>
+
+        <button onclick="updateUniversally()">UPDATE INTENSITIES & GROUP</button>
+
+        <div class="result-box" id="output">Resulting QC String will appear here...</div>
+    </div>
 
 <script>
-    function process() {
-        let input = document.getElementById('rawInput').value.trim();
-        let parts = input.split(',');
-        let out = [];
+    function updateUniversally() {
+        const input = document.getElementById('dataInput').value;
+        const newVal = document.getElementById('uniValue').value;
         
-        for (let i = 0; i < parts.length; i += 3) {
-            // Slice the next 3 items and join them with commas
-            let triplet = parts.slice(i, i + 3).join(',');
-            out.push(triplet);
+        // 1. Convert to array (handles commas or spaces)
+        let rawArray = input.split(/[ ,]+/).filter(Boolean);
+
+        // 2. Loop through and change every 3rd value (Index 2, 5, 8...)
+        for (let i = 2; i < rawArray.length; i += 3) {
+            rawArray[i] = newVal;
         }
-        
-        // Join all triplets with a space
-        document.getElementById('output').innerText = out.join(' ');
+
+        // 3. Re-group into Signature format (X,Y,I X,Y,I)
+        let grouped = [];
+        for (let j = 0; j < rawArray.length; j += 3) {
+            let triplet = rawArray.slice(j, j + 3).join(',');
+            grouped.push(triplet);
+        }
+
+        // 4. Output as a clean space-delimited string
+        document.getElementById('output').innerText = grouped.join(' ');
     }
 </script>
 
