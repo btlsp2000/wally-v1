@@ -2,108 +2,146 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WallyCAD v1.0.10 | Truss Standalone</title>
+    <title>WallyCAD v1.0.10 | Truss Analytics</title>
     <style>
-        body { background: #1a1a1a; color: #00ff00; font-family: monospace; display: flex; flex-direction: column; align-items: center; }
-        #canvas-container { border: 2px solid #333; margin-top: 20px; background: #000; }
-        .qc-input { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; width: 300px; font-size: 1.2rem; text-align: center; }
-        .info { margin: 10px; color: #888; font-size: 0.8rem; }
-        /* Placeholder for SquareFont rendering */
-        .squarefont { font-family: 'Courier New', monospace; font-weight: bold; }
+        body { background: #121212; color: #00ff00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .main-layout { display: flex; gap: 20px; width: 95%; max-width: 1200px; }
+        #canvas-container { flex: 2; border: 1px solid #333; background: #000; padding: 10px; box-shadow: 0 0 15px rgba(0,255,0,0.1); }
+        .data-panel { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 15px; height: 500px; overflow-y: auto; }
+        .qc-input { background: #000; border: 2px solid #00ff00; color: #00ff00; padding: 12px; width: 400px; font-size: 1.2rem; margin: 20px 0; outline: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background: #222; color: #888; }
+        .btn { background: #00ff00; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn:hover { background: #00cc00; }
+        h2, h3 { margin-top: 0; color: #fff; }
     </style>
 </head>
 <body>
 
-    <h2>WallyCAD v1.0.10 - Standalone Truss</h2>
-    <div class="info">Project: 2026 Year of the Trailer | System: QuickClick (QC)</div>
+    <h2>WallyCAD v1.0.10 - Truss Standalone</h2>
+    <p style="color: #888;">2026: The Year of the Trailer | PTP Logic Enabled</p>
 
-    <div id="canvas-container">
-        <canvas id="trussCanvas" width="800" height="400"></canvas>
+    <div class="main-layout">
+        <div id="canvas-container">
+            <canvas id="trussCanvas" width="700" height="400"></canvas>
+            <div style="margin-top: 10px;">
+                <button class="btn" onclick="downloadJSON()">EXPORT JSON</button>
+            </div>
+        </div>
+
+        <div class="data-panel">
+            <h3>Coordinate Table</h3>
+            <table id="coordTable">
+                <thead>
+                    <tr>
+                        <th>Node</th>
+                        <th>X (ft)</th>
+                        <th>Y (ft)</th>
+                    </tr>
+                </thead>
+                <tbody id="coordBody"></tbody>
+            </table>
+        </div>
     </div>
 
-    <p>Enter QC Command (e.g., T7-1-6)</p>
-    <input type="text" id="qcCommand" class="qc-input" placeholder="QC > TYPE-SPAN-DEPTH-PANELS" autofocus>
+    <input type="text" id="qcCommand" class="qc-input" placeholder="QC > T[SPAN]-[DEPTH]-[PANELS]" autofocus>
 
     <script>
         const canvas = document.getElementById('trussCanvas');
         const ctx = canvas.getContext('2d');
         const qcInput = document.getElementById('qcCommand');
+        const coordBody = document.getElementById('coordBody');
 
-        // Defaults for 7ft x 7ft Cabin Trailer
-        let config = {
-            span: 7,    // Feet
-            depth: 1,   // Feet
-            panels: 6   // Matches your sketch
-        };
+        let config = { span: 7, depth: 1, panels: 6 };
+        let nodes = [];
 
-        function drawTruss() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-
-            const margin = 50;
-            const drawWidth = canvas.width - (margin * 2);
-            const drawHeight = 150; 
-            const startX = margin;
-            const startY = canvas.height / 2;
-
-            const panelWidthPx = drawWidth / config.panels;
-            const depthPx = config.depth * 100; // Scale for visibility
-
-            ctx.beginPath();
-
-            // Lateral Position Logic (Warren Truss)
+        function calculateNodes() {
+            nodes = [];
+            const panelWidth = config.span / config.panels;
+            
             for (let i = 0; i <= config.panels; i++) {
-                let tx = startX + (i * panelWidthPx);
-                let ty = startY - depthPx;
-
-                let bx = startX + (i + 0.5) * panelWidthPx;
-                let by = startY;
-
-                // Draw Top Chord
-                if (i < config.panels) {
-                    ctx.moveTo(tx, ty);
-                    ctx.lineTo(tx + panelWidthPx, ty);
-                }
-
-                // Draw Diagonals (The "W" Pattern)
-                ctx.moveTo(tx, ty);
-                ctx.lineTo(bx, by);
+                // Top Chord Nodes (T)
+                nodes.push({ id: `T${i}`, x: (i * panelWidth).toFixed(3), y: config.depth.toFixed(3) });
                 
+                // Bottom Chord Nodes (B) - Center of the panel
                 if (i < config.panels) {
-                    ctx.lineTo(tx + panelWidthPx, ty);
+                    nodes.push({ id: `B${i}`, x: ((i + 0.5) * panelWidth).toFixed(3), y: "0.000" });
                 }
             }
-            
-            // Draw Bottom Chord
-            ctx.moveTo(startX + (0.5 * panelWidthPx), startY);
-            ctx.lineTo(startX + (config.panels - 0.5) * panelWidthPx, startY);
-
-            ctx.stroke();
-
-            // SquareFont Placeholder Labels
-            ctx.fillStyle = "#00ff00";
-            ctx.fillText(`SPAN: ${config.span}'`, startX, startY + 40);
-            ctx.fillText(`DEPTH: ${config.depth}'`, startX, startY + 60);
-            ctx.fillText(`PTP SOLVE: READY`, startX, startY + 80);
+            updateTable();
         }
 
-        // QuickClick (QC) Parser
+        function updateTable() {
+            coordBody.innerHTML = nodes.map(n => 
+                `<tr><td>${n.id}</td><td>${n.x}</td><td>${n.y}</td></tr>`
+            ).join('');
+        }
+
+        function drawTruss() {
+            calculateNodes();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const margin = 50;
+            const scaleX = (canvas.width - margin * 2) / config.span;
+            const scaleY = 150; // Visual scale for height
+            const startX = margin;
+            const startY = canvas.height - 100;
+
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            // Render logic using the nodes array
+            nodes.forEach((node, index) => {
+                const px = startX + (node.x * scaleX);
+                const py = startY - (node.y * scaleY);
+
+                // Draw circles for nodes
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                
+                // Draw connecting lines based on index pattern
+                if (index < nodes.length - 1) {
+                    const nextNode = nodes[index + 1];
+                    const nx = startX + (nextNode.x * scaleX);
+                    const ny = startY - (nextNode.y * scaleY);
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(nx, ny);
+                }
+            });
+
+            ctx.stroke();
+            
+            // Labeling
+            ctx.fillStyle = "#888";
+            ctx.fillText(`Current Profile: ${config.span}' x ${config.depth}' (${config.panels} Panels)`, margin, 30);
+        }
+
         qcInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const val = qcInput.value.toUpperCase();
                 if (val.startsWith('T')) {
-                    const parts = val.substring(1).split('-');
-                    if (parts.length === 3) {
-                        config.span = parseFloat(parts[0]);
-                        config.depth = parseFloat(parts[1]);
-                        config.panels = parseInt(parts[2]);
+                    const p = val.substring(1).split('-');
+                    if (p.length === 3) {
+                        config.span = parseFloat(p[0]);
+                        config.depth = parseFloat(p[1]);
+                        config.panels = parseInt(p[2]);
                         drawTruss();
                     }
                 }
                 qcInput.value = '';
             }
         });
+
+        function downloadJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nodes, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `truss_${config.span}ft.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
 
         drawTruss();
     </script>
