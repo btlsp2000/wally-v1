@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD v1.0.10 | Truss Standalone</title>
+    <style>
+        body { background: #1a1a1a; color: #00ff00; font-family: monospace; display: flex; flex-direction: column; align-items: center; }
+        #canvas-container { border: 2px solid #333; margin-top: 20px; background: #000; }
+        .qc-input { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; width: 300px; font-size: 1.2rem; text-align: center; }
+        .info { margin: 10px; color: #888; font-size: 0.8rem; }
+        /* Placeholder for SquareFont rendering */
+        .squarefont { font-family: 'Courier New', monospace; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>WallyCAD v1.0.10 - Standalone Truss</h2>
+    <div class="info">Project: 2026 Year of the Trailer | System: QuickClick (QC)</div>
+
+    <div id="canvas-container">
+        <canvas id="trussCanvas" width="800" height="400"></canvas>
+    </div>
+
+    <p>Enter QC Command (e.g., T7-1-6)</p>
+    <input type="text" id="qcCommand" class="qc-input" placeholder="QC > TYPE-SPAN-DEPTH-PANELS" autofocus>
+
+    <script>
+        const canvas = document.getElementById('trussCanvas');
+        const ctx = canvas.getContext('2d');
+        const qcInput = document.getElementById('qcCommand');
+
+        // Defaults for 7ft x 7ft Cabin Trailer
+        let config = {
+            span: 7,    // Feet
+            depth: 1,   // Feet
+            panels: 6   // Matches your sketch
+        };
+
+        function drawTruss() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+
+            const margin = 50;
+            const drawWidth = canvas.width - (margin * 2);
+            const drawHeight = 150; 
+            const startX = margin;
+            const startY = canvas.height / 2;
+
+            const panelWidthPx = drawWidth / config.panels;
+            const depthPx = config.depth * 100; // Scale for visibility
+
+            ctx.beginPath();
+
+            // Lateral Position Logic (Warren Truss)
+            for (let i = 0; i <= config.panels; i++) {
+                let tx = startX + (i * panelWidthPx);
+                let ty = startY - depthPx;
+
+                let bx = startX + (i + 0.5) * panelWidthPx;
+                let by = startY;
+
+                // Draw Top Chord
+                if (i < config.panels) {
+                    ctx.moveTo(tx, ty);
+                    ctx.lineTo(tx + panelWidthPx, ty);
+                }
+
+                // Draw Diagonals (The "W" Pattern)
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(bx, by);
+                
+                if (i < config.panels) {
+                    ctx.lineTo(tx + panelWidthPx, ty);
+                }
+            }
+            
+            // Draw Bottom Chord
+            ctx.moveTo(startX + (0.5 * panelWidthPx), startY);
+            ctx.lineTo(startX + (config.panels - 0.5) * panelWidthPx, startY);
+
+            ctx.stroke();
+
+            // SquareFont Placeholder Labels
+            ctx.fillStyle = "#00ff00";
+            ctx.fillText(`SPAN: ${config.span}'`, startX, startY + 40);
+            ctx.fillText(`DEPTH: ${config.depth}'`, startX, startY + 60);
+            ctx.fillText(`PTP SOLVE: READY`, startX, startY + 80);
+        }
+
+        // QuickClick (QC) Parser
+        qcInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = qcInput.value.toUpperCase();
+                if (val.startsWith('T')) {
+                    const parts = val.substring(1).split('-');
+                    if (parts.length === 3) {
+                        config.span = parseFloat(parts[0]);
+                        config.depth = parseFloat(parts[1]);
+                        config.panels = parseInt(parts[2]);
+                        drawTruss();
+                    }
+                }
+                qcInput.value = '';
+            }
+        });
+
+        drawTruss();
+    </script>
+</body>
+</html>
