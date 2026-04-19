@@ -139,6 +139,35 @@ function addTraverseFromQC() {
         render(); // Update Draft and Sim canvases
     }
 }
+
+    // Pro Material Settings
+let materialThickness = 0.75; // Default 3/4" ply
+let clearanceHeight = 0.125;  // Rapid move height above surface
+let plungeFeed = 15;          // Feed rate for Z descent
+
+function generateProGCode(vector) {
+    const lines = [];
+    
+    // 1. Rapid to start point at clearance height
+    lines.push(`G00 X${vector.x1.toFixed(4)} Y${vector.y1.toFixed(4)} Z${clearanceHeight.toFixed(4)}`);
+    
+    // 2. Plunge to cut depth (Z- is into the material)
+    lines.push(`G01 Z-${materialThickness.toFixed(4)} F${plungeFeed}`);
+    
+    // 3. Cut the vector path
+    lines.push(`G01 X${vector.x2.toFixed(4)} Y${vector.y2.toFixed(4)} F60`);
+    
+    // 4. Retract for safety
+    lines.push(`G00 Z${clearanceHeight.toFixed(4)}`);
+
+    // Output to Split-Screen Window
+    const gWindow = document.getElementById('gcode-lines');
+    lines.forEach(line => {
+        const div = document.createElement('div');
+        div.innerText = line;
+        gWindow.appendChild(div);
+    });
+}
 </script>
 </body>
 </html>
