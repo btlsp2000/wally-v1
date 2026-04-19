@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | WIB Data Hub</title>
+    <style>
+        body { background: #1a1a1a; color: #ffcc00; font-family: monospace; padding: 20px; }
+        .timeline-item { border-left: 2px solid #ffcc00; margin-left: 20px; padding: 15px; position: relative; cursor: pointer; }
+        .timeline-item::before { content: ''; position: absolute; left: -7px; top: 20px; width: 12px; height: 12px; background: #ffcc00; border-radius: 50%; }
+        .timeline-item:hover { background: #222; }
+        .year-label { font-size: 1.2em; font-weight: bold; color: #fff; margin-top: 20px; }
+        #status-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; padding: 10px; border-top: 1px solid #444; color: #ffcc00; }
+    </style>
+</head>
+<body>
+
+    <h2>WHERE IS BILL (WIB) TIMELINE</h2>
+    <div id="timeline">
+        <div class="year-label">2026</div>
+        <div class="timeline-item" onclick="syncMap(45.52, -122.67, 'PORTLAND', 'WA,OR')">
+            <strong>APRIL:</strong> Launched WallyCAD Pro Entities. <br>
+            <em>Location: Portland, OR</em>
+        </div>
+        
+        <div class="year-label">2024</div>
+        <div class="timeline-item" onclick="syncMap(36.17, -115.13, 'LAS VEGAS', 'NV,AZ')">
+            <strong>SEPTEMBER:</strong> Pool Tournament at Sam's Hollywood Billiards. <br>
+            <em>Location: Portland/Henderson</em>
+        </div>
+
+        <div class="year-label">1951</div>
+        <div class="timeline-item">
+            <strong>JULY 13:</strong> Origin Point.
+        </div>
+    </div>
+
+    <div id="status-bar">QC: [M: Sync to Mapper | G: Game Mode | B: Backup Data]</div>
+
+<script>
+    function syncMap(lat, long, label, activeStates) {
+        console.log(`Syncing WIB Data: ${label} at ${lat}, ${long}`);
+        
+        // Links to Standalones: Tell the Mapper to highlight these states and zoom
+        if (window.opener) {
+            window.opener.postMessage({
+                type: 'WIB_SYNC',
+                coords: { lat, long },
+                label: label,
+                states: activeStates.split(',')
+            }, '*');
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toUpperCase() === 'M') alert("Syncing entire timeline to Mapper...");
+    });
+</script>
+</body>
+</html>
