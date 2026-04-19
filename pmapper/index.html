@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | Perimeter Mapper Hub</title>
+    <style>
+        body { background: #1a1a1a; color: #00ff00; font-family: monospace; padding: 20px; }
+        .state-card { border: 1px solid #444; padding: 15px; margin-bottom: 10px; cursor: pointer; }
+        .state-card:hover { border-color: #00ff00; background: #222; }
+        #status-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; padding: 10px; border-top: 1px solid #444; }
+    </style>
+</head>
+<body>
+
+    <h2>WALLY PERIMETER HUB</h2>
+    <div id="state-list">
+        </div>
+
+    <div id="status-bar">QC: [A: Add State | E: Export to G-Coder | Z: Zoom Hub]</div>
+
+<script>
+    // State Library (Using your space-delimited concept)
+    const Perimeters = {
+        "WASHINGTON": { lat: 49.0, long: -117.0, data: "49.0 -124.7 49.0 -117.0 46.0 -117.0..." },
+        "OREGON": { lat: 46.0, long: -117.0, data: "46.2 -124.0 42.0 -124.0 42.0 -117.0..." },
+        "CALIFORNIA": { lat: 42.0, long: -120.0, data: "42.0 -124.4 32.5 -117.1 35.0 -114.6..." },
+        "FOUR_CERNERS": { lat: 37.0, long: -109.0, data: "37.0 -109.0 (Shared Vertex Logic)" }
+    };
+
+    function init() {
+        const list = document.getElementById('state-list');
+        Object.keys(Perimeters).forEach(state => {
+            const card = document.createElement('div');
+            card.className = 'state-card';
+            card.innerHTML = `<strong>${state}</strong><br>Status: Ready for Vector Export`;
+            card.onclick = () => exportToGCoder(state);
+            list.appendChild(card);
+        });
+    }
+
+    // "Links to Standalones" Protocol
+    function exportToGCoder(stateName) {
+        const stateData = Perimeters[stateName];
+        console.log(`Piping ${stateName} coordinates to G-Coder entity...`);
+        
+        // This is where you trigger the postMessage to your G-Coder split-screen window
+        // window.opener.postMessage({ type: 'PERIMETER_LOAD', data: stateData }, '*');
+    }
+
+    // QC Integration
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toUpperCase() === 'E') exportToGCoder("WASHINGTON"); // Example shortcut
+    });
+
+    init();
+</script>
+</body>
+</html>
