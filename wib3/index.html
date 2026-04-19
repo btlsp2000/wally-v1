@@ -36,7 +36,35 @@
 
     <div id="status-bar">QC: [M: Sync to Mapper | G: Game Mode | B: Backup Data]</div>
 
+    <div id="game-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,255,0,0.1);">
+    <div id="game-stats" style="padding:20px; background:#000; border:2px solid #00ff00;">
+        CURRENT LOCATION: <span id="loc">PORTLAND</span><br>
+        MILES TRAVELED: <span id="miles">0</span><br>
+        STATES VISITED: <span id="state-count">0/7</span>
+    </div>
+</div>
+
 <script>
+    let gameActive = false;
+    
+    function toggleGameMode() {
+        gameActive = !gameActive;
+        document.getElementById('game-overlay').style.display = gameActive ? 'block' : 'none';
+        if(gameActive) startQuest("FOUR_CORNERS");
+    }
+
+    function startQuest(destination) {
+        // Uses Traverse by Deflection to simulate travel paths
+        console.log(`Quest Started: Destination ${destination}`);
+        // Links to Mapper to highlight the route
+    }
+    
+    // QC Shortcut: 'G' for Game Mode
+    window.addEventListener('keydown', (e) => {
+        if(e.key.toUpperCase() === 'G') toggleGameMode();
+    });
+
+
     function syncMap(lat, long, label, activeStates) {
         console.log(`Syncing WIB Data: ${label} at ${lat}, ${long}`);
         
