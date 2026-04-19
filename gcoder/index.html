@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | G-Coder Pro</title>
+    <style>
+        body { margin: 0; display: flex; height: 100vh; background: #1a1a1a; color: #ececec; font-family: monospace; overflow: hidden; }
+        
+        /* Split-Screen Layout */
+        #drafting-pane { width: 50%; border-right: 2px solid #444; position: relative; }
+        #simulator-pane { width: 50%; display: flex; flex-direction: column; background: #000; }
+        
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        /* G-Code Display */
+        #gcode-window { flex-grow: 1; padding: 15px; overflow-y: auto; color: #00ff00; font-size: 14px; background: #0a0a0a; border-top: 1px solid #444; }
+        .highlight { background: #333; color: #fff; }
+
+        /* QC Overlay */
+        #qc-status { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; font-size: 12px; border: 1px solid #00ff00; }
+    </style>
+</head>
+<body>
+
+    <div id="drafting-pane">
+        <canvas id="draftCanvas"></canvas>
+        <div id="qc-status">QC: READY [S: Toggle Split | T: Traverse]</div>
+    </div>
+
+    <div id="simulator-pane">
+        <canvas id="simCanvas"></canvas>
+        <div id="gcode-window">
+            ( G-CODE OUTPUT )<br>
+            G20 (Inches)<br>
+            G90 (Absolute)<br>
+            <span id="gcode-lines"></span>
+        </div>
+    </div>
+
+<script>
+    const dCanvas = document.getElementById('draftCanvas');
+    const sCanvas = document.getElementById('simCanvas');
+    const dCtx = dCanvas.getContext('2d');
+    const sCtx = sCanvas.getContext('2d');
+    
+    // Entity State
+    let splitVisible = true;
+    let vectors = []; // Array of {x1, y1, x2, y2, type}
+
+    // QC Keyboard Logic
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toUpperCase();
+        
+        if (key === 'S') toggleSplit();
+        if (key === 'T') addTraverse(); // Placeholder for Deflection logic
+        if (key === 'F') zoomFourCorners();
+    });
+
+    function toggleSplit() {
+        splitVisible = !splitVisible;
+        document.getElementById('simulator-pane').style.display = splitVisible ? 'flex' : 'none';
+        document.getElementById('drafting-pane').style.width = splitVisible ? '50%' : '100%';
+        resize();
+    }
+
+    // Core G-Code Logic (The "Pro" Engine)
+    function generateGCode(vector) {
+        const line = `G01 X${vector.x2.toFixed(4)} Y${vector.y2.toFixed(4)} F60`;
+        const div = document.createElement('div');
+        div.innerText = line;
+        document.getElementById('gcode-lines').appendChild(div);
+    }
+
+    function resize() {
+        dCanvas.width = dCanvas.clientWidth;
+        dCanvas.height = dCanvas.clientHeight;
+        sCanvas.width = sCanvas.clientWidth;
+        sCanvas.height = sCanvas.clientHeight;
+        render();
+    }
+
+    function render() {
+        // Clear and draw Arc Logic / Vectors here
+        dCtx.strokeStyle = '#00ff00';
+        // ... Render loops using your PTP / Arc Logic constants
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>
