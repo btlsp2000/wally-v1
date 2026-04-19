@@ -168,6 +168,32 @@ function generateProGCode(vector) {
         gWindow.appendChild(div);
     });
 }
+
+    window.addEventListener('message', (event) => {
+    if (event.data.type === 'LOAD_PERIMETER') {
+        const { name, path } = event.data;
+        console.log(`Received ${name} from Mapper.`);
+        
+        // Convert space-delimited string to vector objects
+        const coords = path.split(' ').map(Number);
+        
+        // Clear previous and generate new G-Code/Vectors
+        vectors = [];
+        document.getElementById('gcode-lines').innerHTML = `( START ${name} )<br>`;
+
+        for (let i = 0; i < coords.length - 2; i += 2) {
+            const vec = {
+                x1: coords[i+1], // Map Long to X
+                y1: coords[i],   // Map Lat to Y
+                x2: coords[i+3],
+                y2: coords[i+2]
+            };
+            vectors.push(vec);
+            generateProGCode(vec); // This uses your Z-axis logic
+        }
+        render(); // Update the Split-Screen Simulator
+    }
+});
 </script>
 </body>
 </html>
