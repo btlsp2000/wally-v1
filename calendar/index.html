@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIB Calendar - Layout</title>
+    <style>
+        :root {
+            --border-color: #333;
+            --bg-color: #f4f4f4;
+            --text-color: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 20px;
+        }
+
+        /* The Grid Container */
+        .wib-container {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr; /* Main calendar vs Sidebar */
+            grid-template-rows: auto 1fr auto;
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            background: white;
+        }
+
+        /* Grid Sections */
+        .calendar-main {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+            border: 1px solid #ccc;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+        }
+
+        .sidebar-pic {
+            grid-column: 2 / 3;
+            border: 1px solid #ccc;
+            background: #eee;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .sidebar-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .memoir-excerpt {
+            grid-column: 2 / 3;
+            border: 1px solid #ccc;
+            padding: 15px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .metadata-footer {
+            grid-column: 1 / 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .gdoc-embed {
+            grid-column: 2 / 3;
+            border: 1px solid #ccc;
+            height: 150px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        h2 { margin-top: 0; font-size: 1.2rem; text-transform: uppercase; }
+        ul { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; }
+        .qr-placeholder { width: 60px; height: 60px; border: 1px solid #000; }
+
+    </style>
+</head>
+<body>
+
+    <div class="wib-container">
+        <section class="calendar-main">
+            <h2>Calendar Grid (WallyCAD Native)</h2>
+        </section>
+
+        <section class="sidebar-pic">
+            <img src="https://via.placeholder.com/300" alt="Featured Project Photo">
+        </section>
+
+        <section class="memoir-excerpt">
+            <h3>It Happened in Portland</h3>
+            <p>"The geometry of a pool table is honest. Unlike the streets of Portland in the rain, the angles don't lie. I remember the first time I saw a 'No Luck' shot—it wasn't about the strike; it was about the calculation..."</p>
+        </section>
+
+        <section class="gdoc-embed">
+            Google Doc Embed Area
+        </section>
+
+        <footer class="metadata-footer">
+            <div>
+                <ul>
+                    <li><strong>CREDIT:</strong> Bill Tonnesen</li>
+                    <li><strong>NOTES:</strong> WallyCAD Pro Entities</li>
+                    <li><strong>LINKS:</strong> wallycad.com</li>
+                </ul>
+            </div>
+            <div class="qr-placeholder">QR</div>
+        </footer>
+    </div>
+
+    <h1 style="text-align:center; font-family: monospace;">WIB CALENDAR (HTML)</h1>
+
+</body>
+</html>
