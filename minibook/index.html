@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD | Mini-Book Configurator</title>
+    <style>
+        /* Print Settings for Standard 8.5x11 Paper */
+        @page { size: letter landscape; margin: 0; }
+        body { margin: 0; font-family: 'Courier New', monospace; background: #fff; color: #000; }
+
+        /* The 8-Panel Zine Grid */
+        .zine-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            width: 11in;
+            height: 8.5in;
+            border: 1px dashed #ccc;
+        }
+
+        .panel {
+            border: 1px solid #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        /* Upside-down panels for the top row (required for zine folding) */
+        .top-row { transform: rotate(180deg); }
+
+        h1 { font-size: 24px; margin: 5px 0; border-bottom: 2px solid #000; }
+        h2 { font-size: 16px; text-transform: uppercase; color: #444; }
+        p { font-size: 10px; line-height: 1.2; }
+        .qr-placeholder { width: 80px; height: 80px; border: 2px solid #000; margin-top: 10px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+        
+        .code-snippet { font-family: monospace; background: #f0f0f0; padding: 5px; font-size: 9px; width: 90%; }
+    </style>
+</head>
+<body>
+
+    <div class="zine-container">
+        <div class="panel top-row">
+            <h2>The Logic</h2>
+            <p>P1 -> P4 Running Traverse</p>
+            <div class="code-snippet">10 (L) 90 (R) 90</div>
+            <p>QuickClick: L/R Auto-Square</p>
+        </div>
+        <div class="panel top-row">
+            <h2>The Structure</h2>
+            <p>Block Reference Protocol</p>
+            <div class="code-snippet">BLOCK:UNIT_111</div>
+            <p>Unit -> Wall -> Complex</p>
+        </div>
+        <div class="panel top-row">
+            <h2>WIB Hub</h2>
+            <p>Real-Time Profile Sync</p>
+            <p>Your history, mapped.</p>
+        </div>
+        <div class="panel top-row">
+            <h2>Designer</h2>
+            <p>Bill L. Tonnesen</p>
+            <p>Structural Steel Detailer</p>
+        </div>
+
+        <div class="panel">
+            <p>Inside Back Cover</p>
+            <p>WallyCAD v.1.10</p>
+        </div>
+        <div class="panel">
+            <h2>The Vault</h2>
+            <div class="qr-placeholder">QR CODE TO GIST</div>
+            <p>Scan to Sync</p>
+        </div>
+        <div class="panel">
+            <h1>WALLYCAD</h1>
+            <h2>V.1.10 Manual</h2>
+            <p>Browser-Native Geometry</p>
+        </div>
+        <div class="panel">
+            <p>Drafting Board 2.0</p>
+            <p>wallycad.com</p>
+        </div>
+    </div>
+
+</body>
+</html>
