@@ -2,88 +2,133 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WallyCAD | Mini-Book Configurator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD v.1.10 | Promo Mini-Book</title>
     <style>
-        /* Print Settings for Standard 8.5x11 Paper */
+        /* Print & Layout Constants */
         @page { size: letter landscape; margin: 0; }
-        body { margin: 0; font-family: 'Courier New', monospace; background: #fff; color: #000; }
+        body { margin: 0; padding: 0; font-family: "Courier New", Courier, monospace; background: #fff; }
 
-        /* The 8-Panel Zine Grid */
         .zine-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr);
             width: 11in;
             height: 8.5in;
-            border: 1px dashed #ccc;
-        }
-
-        .panel {
-            border: 1px solid #eee;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            box-sizing: border-box;
+            border: 1px solid #000;
             overflow: hidden;
         }
 
-        /* Upside-down panels for the top row (required for zine folding) */
+        .panel {
+            border: 0.5px dashed #ccc;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Top Row must be rotated 180 deg for the zine fold */
         .top-row { transform: rotate(180deg); }
 
-        h1 { font-size: 24px; margin: 5px 0; border-bottom: 2px solid #000; }
-        h2 { font-size: 16px; text-transform: uppercase; color: #444; }
-        p { font-size: 10px; line-height: 1.2; }
-        .qr-placeholder { width: 80px; height: 80px; border: 2px solid #000; margin-top: 10px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+        /* Typography */
+        h1 { font-size: 28px; margin: 0; letter-spacing: -1px; font-weight: 900; }
+        h2 { font-size: 14px; text-transform: uppercase; margin: 5px 0; background: #000; color: #fff; padding: 2px 8px; }
+        p { font-size: 11px; line-height: 1.3; margin: 4px 0; }
+        .small-caps { font-variant: small-caps; font-size: 10px; }
         
-        .code-snippet { font-family: monospace; background: #f0f0f0; padding: 5px; font-size: 9px; width: 90%; }
+        /* Graphics */
+        .logo-box { border: 2px solid #000; padding: 5px 15px; margin-bottom: 10px; }
+        .qr-frame { width: 90px; height: 90px; border: 3px double #000; display: flex; align-items: center; justify-content: center; margin: 10px 0; font-weight: bold; font-size: 9px; }
+        .diagram { width: 100%; height: 80px; border: 1px solid #eee; margin: 10px 0; display: flex; align-items: center; justify-content: center; }
+        
+        .sideways-text {
+            position: absolute;
+            left: 5px;
+            bottom: 20px;
+            transform: rotate(-90deg);
+            transform-origin: left bottom;
+            font-size: 8px;
+            white-space: nowrap;
+        }
+
+        .dedication {
+            position: absolute;
+            right: 5px;
+            top: 20px;
+            transform: rotate(90deg);
+            transform-origin: right top;
+            font-size: 7px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
     <div class="zine-container">
+        
         <div class="panel top-row">
-            <h2>The Logic</h2>
-            <p>P1 -> P4 Running Traverse</p>
-            <div class="code-snippet">10 (L) 90 (R) 90</div>
-            <p>QuickClick: L/R Auto-Square</p>
-        </div>
-        <div class="panel top-row">
-            <h2>The Structure</h2>
-            <p>Block Reference Protocol</p>
-            <div class="code-snippet">BLOCK:UNIT_111</div>
-            <p>Unit -> Wall -> Complex</p>
-        </div>
-        <div class="panel top-row">
-            <h2>WIB Hub</h2>
-            <p>Real-Time Profile Sync</p>
-            <p>Your history, mapped.</p>
-        </div>
-        <div class="panel top-row">
-            <h2>Designer</h2>
-            <p>Bill L. Tonnesen</p>
-            <p>Structural Steel Detailer</p>
+            <h2>Logic</h2>
+            <p><strong>Running Traverse</strong></p>
+            <div class="diagram" style="font-size: 10px;">P1 → P2 [L] → P3</div>
+            <p>QC [L] = +90°<br>QC [R] = -90°</p>
+            <p class="small-caps">Code as a Drafting Board</p>
         </div>
 
-                        <div class="panel">
-            <p>Drafting Board 2.0</p>
-            <p>wallycad.com</p>
+        <div class="panel top-row">
+            <h2>Structure</h2>
+            <p><strong>Block Reference</strong></p>
+            <p>Box (Unit) → Wall → Complex</p>
+            <div class="code" style="font-size: 9px; background: #eee; padding: 2px;">(REF)UNIT_111</div>
+            <p>Update DNA once.<br>Update the world.</p>
         </div>
+
+        <div class="panel top-row">
+            <h2>WIB Hub</h2>
+            <p>Real-Time Sync</p>
+            <p>Your history, mapped across the timeline.</p>
+            <p class="small-caps">Built on GitHub Gist</p>
+        </div>
+
+        <div class="panel top-row">
+            <h2>Designer</h2>
+            <p><strong>Bill L. Tonnesen</strong></p>
+            <p>Pro Steel Detailer<br>Draftsman / Developer</p>
+            <p>Portland, Oregon</p>
+        </div>
+
         <div class="panel">
+            <span class="sideways-text">DESIGNER: BILL L. TONNESEN, PRO STEEL DETAILER</span>
             <p>Inside Back Cover</p>
             <p>WallyCAD v.1.10</p>
+            <p>Built for Builders.</p>
         </div>
+
         <div class="panel">
-            <h2>The Vault</h2>
-            <div class="qr-placeholder">QR CODE TO GIST</div>
-            <p>Scan to Sync</p>
+            <h2>Vault</h2>
+            <div class="qr-frame">SCAN FOR<br>GIST</div>
+            <p><strong>wallycad.com</strong></p>
+            <span class="dedication">DEDICATED TO TEACHERS AT PALOMAR & FULLERTON</span>
         </div>
+
         <div class="panel">
-            <h1>WALLYCAD</h1>
-            <h2>V.1.10 Manual</h2>
+            <div class="logo-box"><h1>WALLYCAD</h1></div>
+            <p><strong>V.1.10 Manual</strong></p>
             <p>Browser-Native Geometry</p>
+            <p class="small-caps">Press Print. Fold. Deploy.</p>
         </div>
+
+        <div class="panel">
+            <h2>Demo</h2>
+            <p>Portland Community College</p>
+            <p>Drafting Board 2.0</p>
+            <p>Logic Lab v.1</p>
+        </div>
+
     </div>
 
 </body>
