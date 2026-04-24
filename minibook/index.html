@@ -8,6 +8,26 @@
         @page { size: letter landscape; margin: 0; }
         body { margin: 0; font-family: 'Courier New', monospace; background: #fff; color: #000; }
 
+//======================
+    /* Professional Zine Layout */
+    .zine-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        width: 11in;
+        height: 8.5in;
+        border: 1px solid #000;
+    }
+
+    /* Flip the top row so they are upright after the fold */
+    .panel.top { transform: rotate(180deg); border-bottom: 1px dashed #444; }
+    .panel.bottom { border-top: 1px dashed #444; }
+
+    /* The 'X' crossing logic from your sketch */
+    .fold-line-horizontal { position: absolute; top: 50%; left: 0; width: 100%; border-top: 2px solid #000; }
+    .fold-line-vertical { position: absolute; left: 50%; top: 0; height: 100%; border-left: 2px solid #000; }
+//======================
+        
         /* The 8-Panel Zine Grid */
         .zine-container {
             display: grid;
