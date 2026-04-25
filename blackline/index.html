@@ -6,28 +6,55 @@
     <title>WALLY v1.0.10 | COMMERCIAL STABLE</title>
     <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <style>
-        /* UI Color Palette: Kept dark for screen comfort, but Canvas is now High-Contrast */
-        :root { --bg: #f5f5f5; --cad-bg: #ffffff; --cmd-bg: #000000; --accent: #000000; --text: #000000; --dim: #666; --sel: #ff0000; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { 
+            --bg: #f5f5f5; 
+            --cad-bg: #ffffff; 
+            --cmd-bg: #000000; 
+            --accent: #000000; 
+            --text: #000000; 
+            --dim: #666; 
+            --sel: #ff0000; 
+        }
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
         
+        /* Toolbar & Layout */
         #toolbar { height: 45px; background: #eee; border-bottom: 2px solid #000; display: flex; align-items: center; padding: 0 10px; gap: 8px; flex-shrink: 0; }
         #workspace { flex-grow: 1; display: flex; position: relative; }
         #sidebar { width: 260px; background: #fff; border-right: 2px solid #000; overflow-y: auto; display: flex; flex-direction: column; }
         #canvas-area { flex-grow: 1; position: relative; background: var(--cad-bg); cursor: crosshair; }
         
+        /* UI Components */
         button { background: #fff; border: 1px solid #000; color: #000; padding: 5px 10px; font-weight: bold; cursor: pointer; transition: 0.1s; }
         button:hover { background: #000; color: #fff; }
         
         .panel { padding: 12px; border-bottom: 1px solid #ddd; }
         .panel-title { font-size: 11px; font-weight: bold; text-decoration: underline; margin-bottom: 8px; text-transform: uppercase; }
         
-        input, select, textarea { border: 1px solid #000; padding: 4px; width: 100%; font-family: inherit; font-size: 12px; }
+        input, select, textarea { border: 1px solid #000; padding: 4px; width: 100%; font-family: inherit; font-size: 12px; box-sizing: border-box; }
+        label { font-size: 10px; color: #666; margin-top: 10px; display: block; }
+
+        /* Command Line */
         #cmd-bar { height: 35px; background: #000; color: #00ff00; display: flex; align-items: center; padding: 0 10px; }
         #cmd-input { background: transparent; border: none; color: #00ff00; outline: none; flex-grow: 1; font-size: 14px; font-family: 'Consolas', monospace; }
         
-        /* HAL MODE: Inversion for presentation */
+        /* Ledger List */
+        .ledger-item { font-size: 11px; padding: 6px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .ledger-item:hover { background: #f0f0f0; }
+        .ledger-item.selected { background: #000; color: #fff; }
+
+        /* Presentation Mode */
         body.hal-mode { --cad-bg: #000000; --text: #ffffff; }
         body.hal-mode #canvas-area { background: #000; }
+        body.hal-mode #sidebar { background: #1a1a1a; color: #fff; border-right-color: #444; }
     </style>
 </head>
 <body>
@@ -46,10 +73,10 @@
             <div class="panel">
                 <div class="panel-title">PROPERTIES</div>
                 <div id="prop-controls">
-                    <label style="font-size: 10px; color: #666;">WIDTH / RADIUS</label>
-                    <input id="prop-thick" type="number" step="0.1" value="5" oninput="updateProp()">
-                    <label style="font-size: 10px; color: #666; margin-top: 10px; display: block;">CARTESIAN MATRIX (X,Y)</label>
-                    <textarea id="prop-geo" style="height:100px;" oninput="updateProp()" placeholder="0,0\n10,0..."></textarea>
+                    <label>WIDTH / OFFSET</label>
+                    <input id="prop-thick" type="number" step="0.1" value="0" oninput="updateProp()">
+                    <label>CARTESIAN DATA (X,Y)</label>
+                    <textarea id="prop-geo" style="height:120px;" oninput="updateProp()" placeholder="0,0&#10;10,0"></textarea>
                 </div>
             </div>
             <div class="panel" style="flex-grow:1;">
@@ -64,14 +91,15 @@
     </div>
 
     <div id="cmd-bar">
-        <span style="font-weight: bold; margin-right: 5px;">COMMAND:></span>
-        <input id="cmd-input" type="text" spellcheck="false" autofocus>
+        <span style="font-weight: bold; margin-right: 10px;">COMMAND:></span>
+        <input id="cmd-input" type="text" spellcheck="false" autocomplete="off" autofocus>
     </div>
 
 <script>
 let state = {
-    ents: [], selection: null,
-    view: { x: 0, y: 0, scale: 5 },
+    ents: [], 
+    selection: null,
+    view: { x: 0, y: 0, scale: 10 },
     mouse: { worldX: 0, worldY: 0 }
 };
 
@@ -86,16 +114,22 @@ window.onload = () => {
 
 function exec(cmdStr) {
     const cmd = cmdStr.trim().toUpperCase();
-    if (cmd === 'NEW') { state.ents = []; state.selection = null; draw(); }
+    if (cmd === 'NEW') { 
+        state.ents = []; 
+        state.selection = null; 
+        syncUI();
+    }
     else if (cmd === 'WALL') createEnt('WALL', "0,0\n24,0\n24,36", 5);
-    else if (cmd === 'HAL') { document.body.classList.toggle('hal-mode'); draw(); }
+    else if (cmd === 'HAL') { document.body.classList.toggle('hal-mode'); }
     else if (cmd === 'STAIR_RAKE') {
-        const rise = parseFloat(prompt("Rise (e.g. 7):") || 7);
-        const run = parseFloat(prompt("Run (e.g. 11):") || 11);
+        const rise = parseFloat(prompt("Rise (in):") || 7);
+        const run = parseFloat(prompt("Run (in):") || 11);
         const n = parseInt(prompt("Treads:") || 10);
-        const h = parseFloat(prompt("Rail Height:") || 36);
+        const h = parseFloat(prompt("Rail Height (in):") || 36);
         
-        createEnt('STAIR', `0,0\n${run*n},${rise*n}`, 36, run, n);
+        // Create Stair Base
+        createEnt('STAIR', `0,0\n${run*n},${rise*n}`, rise, run, n);
+        // Create Rail Line (The Intersection Solver Plane)
         createEnt('RAIL', `0,${h}\n${run*n},${(rise*n)+h}`, 0);
     }
     draw();
@@ -104,16 +138,31 @@ function exec(cmdStr) {
 function createEnt(type, geo, thick, thickEnd = 0, textStr = "") {
     const ent = { type, geo, thick, thickEnd, textStr, id: Date.now() };
     state.ents.push(ent);
-    state.selection = ent;
-    document.getElementById('prop-thick').value = thick;
-    document.getElementById('prop-geo').value = geo;
-    renderList();
+    selectByID(ent.id);
+    renderLedger();
     return ent;
+}
+
+function selectByID(id) {
+    state.selection = state.ents.find(e => e.id === id);
+    syncUI();
+    draw();
+}
+
+function syncUI() {
+    if(state.selection) {
+        document.getElementById('prop-thick').value = state.selection.thick;
+        document.getElementById('prop-geo').value = state.selection.geo;
+    } else {
+        document.getElementById('prop-thick').value = 0;
+        document.getElementById('prop-geo').value = "";
+    }
+    renderLedger();
 }
 
 function updateProp() {
     if(!state.selection) return;
-    state.selection.thick = parseFloat(document.getElementById('prop-thick').value);
+    state.selection.thick = parseFloat(document.getElementById('prop-thick').value) || 0;
     state.selection.geo = document.getElementById('prop-geo').value;
     draw();
 }
@@ -127,24 +176,28 @@ function draw() {
     ctx.fillRect(0, 0, cvs.width, cvs.height);
     
     ctx.save();
+    // Center view and flip Y for architectural standard
     ctx.translate(cvs.width/2 + state.view.x, cvs.height/2 + state.view.y);
     ctx.scale(state.view.scale, -state.view.scale);
 
     state.ents.forEach(ent => {
-        // ALL line types set to Solid Black (or White in HAL mode)
+        // High-Contrast Solid Lines
         ctx.strokeStyle = isHal ? "#fff" : "#000";
-        ctx.lineWidth = 1.5 / state.view.scale; 
+        ctx.lineWidth = (state.selection && state.selection.id === ent.id) ? 3/state.view.scale : 1.5/state.view.scale;
         
-        const pts = ent.geo.split('\n').map(line => {
+        const pts = ent.geo.split('\n').filter(l => l.trim() !== "").map(line => {
             const [x, y] = line.split(',').map(Number);
             return {x, y};
         });
 
+        if (pts.length === 0) return;
+
         if (ent.type === 'STAIR') {
-            const rise = (pts[pts.length-1].y - pts[0].y) / ent.textStr;
-            const run = ent.thickEnd;
-            for(let i=0; i<ent.textStr; i++) {
-                ctx.strokeRect(i*run, i*rise, run, -0.2); // Solid black tread lines
+            const rise = ent.thick; // Used as rise height
+            const run = ent.thickEnd; // Used as tread depth
+            const n = parseInt(ent.textStr);
+            for(let i=0; i<n; i++) {
+                ctx.strokeRect(i*run, i*rise, run, -0.2); 
             }
         } else {
             ctx.beginPath();
@@ -158,16 +211,14 @@ function draw() {
     ctx.restore();
 }
 
-function renderList() {
+function renderLedger() {
     const list = document.getElementById('ent-list');
-    list.innerHTML = state.ents.map(e => `<div style="font-size:10px; border-bottom:1px solid #eee; padding:5px; cursor:pointer;" onclick="selectByID(${e.id})">â–¶ ${e.type}</div>`).join('');
-}
-
-function selectByID(id) {
-    state.selection = state.ents.find(e => e.id === id);
-    document.getElementById('prop-thick').value = state.selection.thick;
-    document.getElementById('prop-geo').value = state.selection.geo;
-    draw();
+    list.innerHTML = state.ents.map(e => {
+        const selClass = (state.selection && state.selection.id === e.id) ? 'selected' : '';
+        return `<div class="ledger-item ${selClass}" onclick="selectByID(${e.id})">
+            [${e.type}] ${e.geo.split('\n')[0]}...
+        </div>`;
+    }).join('');
 }
 
 function resize() {
@@ -180,9 +231,21 @@ function resize() {
 function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'in', 'letter');
-    doc.setFont("courier");
-    doc.text("WALLYCAD SHOP DRAWING | SCALE: 1:1", 0.5, 0.5);
-    doc.save("wally_plot.pdf");
+    doc.setFont("courier", "bold");
+    doc.setFontSize(12);
+    doc.text("WALLYCAD V1.0.10 SHOP PLOT", 0.5, 0.5);
+    doc.setFontSize(8);
+    doc.text(`DATE: ${new Date().toLocaleDateString()} | UNITS: INCHES`, 0.5, 0.7);
+    
+    const s = 0.05; // Drawing scale for PDF
+    state.ents.forEach(ent => {
+        const pts = ent.geo.split('\n').filter(l => l.trim() !== "").map(l => l.split(',').map(Number));
+        doc.setLineWidth(0.015);
+        for(let i=0; i < pts.length - 1; i++) {
+            doc.line(1 + pts[i][0]*s, 7 - pts[i][1]*s, 1 + pts[i+1][0]*s, 7 - pts[i+1][1]*s);
+        }
+    });
+    doc.save("wally_plot_stable.pdf");
 }
 </script>
 </body>
