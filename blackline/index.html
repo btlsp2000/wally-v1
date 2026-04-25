@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WALLY v1.0.10 | COMMERCIAL STABLE</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <style>
+        /* UI Color Palette: Kept dark for screen comfort, but Canvas is now High-Contrast */
+        :root { --bg: #f5f5f5; --cad-bg: #ffffff; --cmd-bg: #000000; --accent: #000000; --text: #000000; --dim: #666; --sel: #ff0000; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        #toolbar { height: 45px; background: #eee; border-bottom: 2px solid #000; display: flex; align-items: center; padding: 0 10px; gap: 8px; flex-shrink: 0; }
+        #workspace { flex-grow: 1; display: flex; position: relative; }
+        #sidebar { width: 260px; background: #fff; border-right: 2px solid #000; overflow-y: auto; display: flex; flex-direction: column; }
+        #canvas-area { flex-grow: 1; position: relative; background: var(--cad-bg); cursor: crosshair; }
+        
+        button { background: #fff; border: 1px solid #000; color: #000; padding: 5px 10px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+        button:hover { background: #000; color: #fff; }
+        
+        .panel { padding: 12px; border-bottom: 1px solid #ddd; }
+        .panel-title { font-size: 11px; font-weight: bold; text-decoration: underline; margin-bottom: 8px; text-transform: uppercase; }
+        
+        input, select, textarea { border: 1px solid #000; padding: 4px; width: 100%; font-family: inherit; font-size: 12px; }
+        #cmd-bar { height: 35px; background: #000; color: #00ff00; display: flex; align-items: center; padding: 0 10px; }
+        #cmd-input { background: transparent; border: none; color: #00ff00; outline: none; flex-grow: 1; font-size: 14px; font-family: 'Consolas', monospace; }
+        
+        /* HAL MODE: Inversion for presentation */
+        body.hal-mode { --cad-bg: #000000; --text: #ffffff; }
+        body.hal-mode #canvas-area { background: #000; }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <span style="font-weight:900; border:2px solid #000; padding:2px 5px; margin-right: 10px;">WALLY v1.0.10</span>
+        <button onclick="exec('NEW')">NEW</button>
+        <button onclick="exec('WALL')">WALL</button>
+        <button onclick="exec('STAIR_RAKE')">STAIR_RAKE</button>
+        <button onclick="exec('HAL')">HAL VIEW</button>
+        <button onclick="exportPDF()">PRINT PDF</button>
+    </div>
+
+    <div id="workspace">
+        <div id="sidebar">
+            <div class="panel">
+                <div class="panel-title">PROPERTIES</div>
+                <div id="prop-controls">
+                    <label style="font-size: 10px; color: #666;">WIDTH / RADIUS</label>
+                    <input id="prop-thick" type="number" step="0.1" value="5" oninput="updateProp()">
+                    <label style="font-size: 10px; color: #666; margin-top: 10px; display: block;">CARTESIAN MATRIX (X,Y)</label>
+                    <textarea id="prop-geo" style="height:100px;" oninput="updateProp()" placeholder="0,0\n10,0..."></textarea>
+                </div>
+            </div>
+            <div class="panel" style="flex-grow:1;">
+                <div class="panel-title">ENTITY LEDGER</div>
+                <div id="ent-list"></div>
+            </div>
+        </div>
+
+        <div id="canvas-area">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <div id="cmd-bar">
+        <span style="font-weight: bold; margin-right: 5px;">COMMAND:></span>
+        <input id="cmd-input" type="text" spellcheck="false" autofocus>
+    </div>
+
+<script>
+let state = {
+    ents: [], selection: null,
+    view: { x: 0, y: 0, scale: 5 },
+    mouse: { worldX: 0, worldY: 0 }
+};
+
+window.onload = () => {
+    resize();
+    window.addEventListener('resize', resize);
+    document.getElementById('cmd-input').addEventListener('keydown', e => {
+        if(e.key === 'Enter') { exec(e.target.value); e.target.value=''; }
+    });
+    draw();
+};
+
+function exec(cmdStr) {
+    const cmd = cmdStr.trim().toUpperCase();
+    if (cmd === 'NEW') { state.ents = []; state.selection = null; draw(); }
+    else if (cmd === 'WALL') createEnt('WALL', "0,0\n24,0\n24,36", 5);
+    else if (cmd === 'HAL') { document.body.classList.toggle('hal-mode'); draw(); }
+    else if (cmd === 'STAIR_RAKE') {
+        const rise = parseFloat(prompt("Rise (e.g. 7):") || 7);
+        const run = parseFloat(prompt("Run (e.g. 11):") || 11);
+        const n = parseInt(prompt("Treads:") || 10);
+        const h = parseFloat(prompt("Rail Height:") || 36);
+        
+        createEnt('STAIR', `0,0\n${run*n},${rise*n}`, 36, run, n);
+        createEnt('RAIL', `0,${h}\n${run*n},${(rise*n)+h}`, 0);
+    }
+    draw();
+}
+
+function createEnt(type, geo, thick, thickEnd = 0, textStr = "") {
+    const ent = { type, geo, thick, thickEnd, textStr, id: Date.now() };
+    state.ents.push(ent);
+    state.selection = ent;
+    document.getElementById('prop-thick').value = thick;
+    document.getElementById('prop-geo').value = geo;
+    renderList();
+    return ent;
+}
+
+function updateProp() {
+    if(!state.selection) return;
+    state.selection.thick = parseFloat(document.getElementById('prop-thick').value);
+    state.selection.geo = document.getElementById('prop-geo').value;
+    draw();
+}
+
+function draw() {
+    const cvs = document.getElementById('canvas');
+    const ctx = cvs.getContext('2d');
+    const isHal = document.body.classList.contains('hal-mode');
+    
+    ctx.fillStyle = isHal ? "#000" : "#fff";
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    
+    ctx.save();
+    ctx.translate(cvs.width/2 + state.view.x, cvs.height/2 + state.view.y);
+    ctx.scale(state.view.scale, -state.view.scale);
+
+    state.ents.forEach(ent => {
+        // ALL line types set to Solid Black (or White in HAL mode)
+        ctx.strokeStyle = isHal ? "#fff" : "#000";
+        ctx.lineWidth = 1.5 / state.view.scale; 
+        
+        const pts = ent.geo.split('\n').map(line => {
+            const [x, y] = line.split(',').map(Number);
+            return {x, y};
+        });
+
+        if (ent.type === 'STAIR') {
+            const rise = (pts[pts.length-1].y - pts[0].y) / ent.textStr;
+            const run = ent.thickEnd;
+            for(let i=0; i<ent.textStr; i++) {
+                ctx.strokeRect(i*run, i*rise, run, -0.2); // Solid black tread lines
+            }
+        } else {
+            ctx.beginPath();
+            pts.forEach((p, i) => {
+                if(i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+        }
+    });
+    ctx.restore();
+}
+
+function renderList() {
+    const list = document.getElementById('ent-list');
+    list.innerHTML = state.ents.map(e => `<div style="font-size:10px; border-bottom:1px solid #eee; padding:5px; cursor:pointer;" onclick="selectByID(${e.id})">â–¶ ${e.type}</div>`).join('');
+}
+
+function selectByID(id) {
+    state.selection = state.ents.find(e => e.id === id);
+    document.getElementById('prop-thick').value = state.selection.thick;
+    document.getElementById('prop-geo').value = state.selection.geo;
+    draw();
+}
+
+function resize() {
+    const cvs = document.getElementById('canvas');
+    cvs.width = cvs.parentElement.clientWidth;
+    cvs.height = cvs.parentElement.clientHeight;
+    draw();
+}
+
+function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'in', 'letter');
+    doc.setFont("courier");
+    doc.text("WALLYCAD SHOP DRAWING | SCALE: 1:1", 0.5, 0.5);
+    doc.save("wally_plot.pdf");
+}
+</script>
+</body>
+</html>
