@@ -527,6 +527,67 @@ function findHit() {
         return parseCoords(ent.geo).some(p => Math.abs(p.x-state.mouse.worldX)<t && Math.abs(p.y-state.mouse.worldY)<t);
     });
 }
+
+// ==========================================
+// V1.0.10: OSNAP HEADS-UP DISPLAY
+// ==========================================
+function calcOsnap() {
+    state.osnap = null; 
+    const tooltip = document.getElementById('nice-title');
+    const t = 15 / state.view.scale; 
+    
+    state.ents.forEach(ent => {
+        if(!state.layers[ent.layer].visible) return;
+        
+        // Check circles and polylines
+        const pts = parseCoords(ent.geo);
+        pts.forEach(p => {
+            if(Math.hypot(p.x - state.mouse.worldX, p.y - state.mouse.worldY) < t) {
+                state.osnap = p;
+            }
+        });
+    });
+
+    // Update the Nice Title HUD
+    if (state.osnap && !state.view.panStart) {
+        tooltip.innerText = `X: ${state.osnap.x.toFixed(3)}, Y: ${state.osnap.y.toFixed(3)}`;
+        tooltip.style.display = 'block';
+        // Position HUD based on current mouse screen position
+        const cvs = document.getElementById('canvas');
+        const rect = cvs.getBoundingClientRect();
+        // Offset the label slightly from the cursor
+        tooltip.style.left = (state.mouse.screenX + 20) + 'px';
+        tooltip.style.top = (state.mouse.screenY + 10) + 'px';
+        tooltip.style.borderColor = 'yellow'; // Visual cue for Snap
+    } else {
+        // Only hide if we aren't hovering over a toolbar button
+        if (!state.mouse.onUI) tooltip.style.display = 'none';
+        tooltip.style.borderColor = '#444';
+    }
+}
+
+// Updated mouse tracking to support HUD positioning
+function onMove(e) {
+    const r = document.getElementById('canvas').getBoundingClientRect();
+    state.mouse.screenX = e.clientX;
+    state.mouse.screenY = e.clientY;
+    state.mouse.onUI = e.target.id !== 'canvas';
+    
+    if(state.view.panStart) { 
+        state.view.x = state.view.panStart.vx + (e.clientX - state.view.panStart.x); 
+        state.view.y = state.view.panStart.vy + (e.clientY - state.view.panStart.y); 
+        draw(); 
+        return; 
+    }
+    
+    state.mouse.worldX = ((e.clientX - r.left) - state.view.x) / state.view.scale;
+    state.mouse.worldY = -((e.clientY - r.top) - state.view.y) / state.view.scale;
+    
+    calcOsnap();
+    draw();
+}
+
+/*
 function calcOsnap() {
     state.osnap = null; 
     const t = 15 / state.view.scale; 
@@ -536,6 +597,7 @@ function calcOsnap() {
         parseCoords(ent.geo).forEach(p => { if(Math.hypot(p.x-state.mouse.worldX, p.y-state.mouse.worldY) < t) state.osnap = p; });
     });
 }
+*/
 
 function createEnt(type, layer, geo, thick, thickEnd=0, textStr="") { const ent={id:Date.now()+Math.random(), type, layer, geo, thick, thickEnd, textStr}; state.ents.push(ent); selectEnt(ent); centerView(); saveStorage(); return ent; }
 
