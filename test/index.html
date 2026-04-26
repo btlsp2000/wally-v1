@@ -513,10 +513,70 @@ function onDown(e) {
         const hit = findHit(); selectEnt(hit); 
     } 
 }
+
+function onMove(e) {
+    // 1. Handle Panning logic
+    if(state.view.panStart) { 
+        state.view.x = state.view.panStart.vx + (e.clientX - state.view.panStart.x); 
+        state.view.y = state.view.panStart.vy + (e.clientY - state.view.panStart.y); 
+        draw(); 
+        return; 
+    }
+
+    // 2. Track Screen and World positions
+    const r = document.getElementById('canvas').getBoundingClientRect();
+    state.mouse.screenX = e.clientX;
+    state.mouse.screenY = e.clientY;
+    state.mouse.onUI = e.target.id !== 'canvas';
+    
+    state.mouse.worldX = ((e.clientX - r.left) - state.view.x) / state.view.scale;
+    state.mouse.worldY = -((e.clientY - r.top) - state.view.y) / state.view.scale;
+    
+    // 3. Trigger Snap calculation and redraw
+    calcOsnap();
+    draw();
+}
+
+function calcOsnap() {
+    state.osnap = null; 
+    const tooltip = document.getElementById('nice-title');
+    const t = 15 / state.view.scale; // Snap tolerance
+    
+    // Scan all entities for node hits
+    state.ents.forEach(ent => {
+        if(!state.layers[ent.layer].visible) return;
+        const pts = parseCoords(ent.geo);
+        pts.forEach(p => {
+            if(Math.hypot(p.x - state.mouse.worldX, p.y - state.mouse.worldY) < t) {
+                state.osnap = p;
+            }
+        });
+    });
+
+    // 4. Update the HUD (Nice Title)
+    if (state.osnap && !state.view.panStart) {
+        tooltip.innerText = `${state.osnap.x.toFixed(3)}, ${state.osnap.y.toFixed(3)}`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (state.mouse.screenX + 15) + 'px';
+        tooltip.style.top = (state.mouse.screenY + 15) + 'px';
+        tooltip.style.borderColor = 'yellow'; // Highlight border on snap
+    } else {
+        // Only hide if we aren't currently hovering over a menu button
+        if (!state.mouse.onUI) {
+            tooltip.style.display = 'none';
+        }
+        tooltip.style.borderColor = '#444';
+    }
+}
+
+/*
 function onMove(e) {
     if(state.view.panStart) { state.view.x=state.view.panStart.vx+(e.clientX-state.view.panStart.x); state.view.y=state.view.panStart.vy+(e.clientY-state.view.panStart.y); draw(); return; }
     const r=document.getElementById('canvas').getBoundingClientRect(); state.mouse.worldX=((e.clientX-r.left)-state.view.x)/state.view.scale; state.mouse.worldY=-((e.clientY-r.top)-state.view.y)/state.view.scale; calcOsnap(); draw();
 }
+*/
+
+	
 function onUp() { state.view.panStart=null; }
 function onWheel(e) { state.view.scale *= e.deltaY<0 ? 1.1 : 0.9; draw(); }
 
@@ -531,7 +591,9 @@ function findHit() {
 // ==========================================
 // V1.0.10: OSNAP HEADS-UP DISPLAY
 // ==========================================
-function calcOsnap() {
+
+/*
+	function calcOsnap() {
     state.osnap = null; 
     const tooltip = document.getElementById('nice-title');
     const t = 15 / state.view.scale; 
@@ -586,6 +648,7 @@ function onMove(e) {
     calcOsnap();
     draw();
 }
+*/
 
 /*
 function calcOsnap() {
