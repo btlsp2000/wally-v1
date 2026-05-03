@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIB VECTOR | Extraction Manifest</title>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #22c55e;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #vector-container {
+            border: 1px solid #166534;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            letter-spacing: 0.2rem;
+            border-bottom: 2px solid #22c55e;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .coordinate-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+
+        .node {
+            border: 1px solid #22c55e;
+            padding: 15px;
+            background: #000;
+        }
+
+        .vector-line {
+            font-weight: bold;
+            color: #86efac;
+        }
+
+        .manifest {
+            margin-top: 30px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #4ade80;
+        }
+
+        .status-blink {
+            animation: blinker 1.5s linear infinite;
+            color: #f87171;
+            font-weight: bold;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="vector-container">
+        <h1>WIB VECTOR: EXTRACTION</h1>
+        
+        <div class="coordinate-grid">
+            <div class="node">
+                <strong>ORIGIN</strong><br>
+                Node 113<br>
+                PDX
+            </div>
+            <div class="vector-line">
+                ---- $53 AMTRAK ---->
+            </div>
+            <div class="node">
+                <strong>DESTINATION</strong><br>
+                KF Node<br>
+                Fresh Air
+            </div>
+        </div>
+
+        <div class="manifest">
+            <p>> PROJECT: LIQUIFY [STATUS: <span class="status-blink">ACTIVE</span>]</p>
+            <p>> ASSET: MASTER ARCHIVE (WESLEY-01)</p>
+            <p>> PIVOT: MON 09:00 BRISTOL URBAN</p>
+            <p>> RESOLVE: 1:1 SCALE SOVEREIGNTY</p>
+        </div>
+
+        <div class="footer">
+            S.S.D.S. MANIFEST v1.0.15 | NO EXTERNAL SANCTION REQUIRED
+        </div>
+    </div>
+
+</body>
+</html>
