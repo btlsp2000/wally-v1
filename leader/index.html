@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD :: Vector Leader Gen</title>
+    <style>
+        body { background: #121212; color: #0f0; font-family: monospace; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        canvas { border: 1px solid #444; background: #000; }
+        textarea { width: 100%; height: 300px; background: #050505; color: #0f0; border: 1px solid #333; padding: 10px; }
+        input { background: #222; color: #0ff; border: 1px solid #444; width: 60px; margin-bottom: 10px; }
+        label { display: block; font-size: 11px; color: #888; }
+    </style>
+</head>
+<body>
+    <h3>WallyCAD :: Directed Vector (Leader)</h3>
+    <div class="grid">
+        <div class="ui">
+            <label>Start X / Y</label>
+            <input type="number" id="x1" value="50"> <input type="number" id="y1" value="350">
+            <label>End X / Y</label>
+            <input type="number" id="x2" value="250"> <input type="number" id="y2" value="100">
+            <label>Arrow Size</label>
+            <input type="number" id="aSize" value="15">
+            <button onclick="draw()">Generate Vector</button>
+            <label>Wally Output</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+        <canvas id="vp" width="500" height="500"></canvas>
+    </div>
+
+    <script>
+        function draw() {
+            const x1 = parseFloat(document.getElementById('x1').value);
+            const y1 = parseFloat(document.getElementById('y1').value);
+            const x2 = parseFloat(document.getElementById('x2').value);
+            const y2 = parseFloat(document.getElementById('y2').value);
+            const size = parseFloat(document.getElementById('aSize').value);
+
+            const canvas = document.getElementById('vp');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 500, 500);
+
+            // 1. Calculate Vector and Angle
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const angle = Math.atan2(dy, dx);
+
+            // 2. Draw Main Leader Line
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            // 3. Arrowhead Calculation (The "Wings")
+            const headAngle = Math.PI / 6; // 30 degrees
+            const p3x = x2 - size * Math.cos(angle - headAngle);
+            const p3y = y2 - size * Math.sin(angle - headAngle);
+            const p4x = x2 - size * Math.cos(angle + headAngle);
+            const p4y = y2 - size * Math.sin(angle + headAngle);
+
+            // Draw Head
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(p3x, p3y);
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(p4x, p4y);
+            ctx.stroke();
+
+            // 4. Space-Delimited Output
+            let out = "--- VECTOR LEADER ---\n";
+            out += `${x1.toFixed(3)} ${y1.toFixed(3)} ; Start\n`;
+            out += `${x2.toFixed(3)} ${y2.toFixed(3)} ; End\n`;
+            out += "--- ARROW WINGS ---\n";
+            out += `${p3x.toFixed(3)} ${p3y.toFixed(3)}\n`;
+            out += `${p4x.toFixed(3)} ${p4y.toFixed(3)}`;
+            document.getElementById('output').value = out;
+        }
+        draw();
+    </script>
+</body>
+</html>
