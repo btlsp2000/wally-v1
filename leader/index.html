@@ -30,54 +30,55 @@
     </div>
 
     <script>
-        function draw() {
-            const x1 = parseFloat(document.getElementById('x1').value);
-            const y1 = parseFloat(document.getElementById('y1').value);
-            const x2 = parseFloat(document.getElementById('x2').value);
-            const y2 = parseFloat(document.getElementById('y2').value);
-            const size = parseFloat(document.getElementById('aSize').value);
+function draw() {
+    const canvas = document.getElementById('vp');
+    const ctx = canvas.getContext('2d');
+    const H = canvas.height; // Total viewport height
 
-            const canvas = document.getElementById('vp');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, 500, 500);
+    // Inputs
+    const x1 = parseFloat(document.getElementById('x1').value);
+    const y1 = parseFloat(document.getElementById('y1').value);
+    const x2 = parseFloat(document.getElementById('x2').value);
+    const y2 = parseFloat(document.getElementById('y2').value);
+    const size = parseFloat(document.getElementById('aSize').value);
 
-            // 1. Calculate Vector and Angle
-            const dx = x2 - x1;
-            const dy = y2 - y1;
-            const angle = Math.atan2(dy, dx);
+    // 1. INVERT Y for Canvas Rendering
+    const iy1 = H - y1;
+    const iy2 = H - y2;
 
-            // 2. Draw Main Leader Line
-            ctx.strokeStyle = '#0f0';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
+    // 2. Vector Calculation (using inverted Y for correct visual rotation)
+    const dx = x2 - x1;
+    const dy = iy2 - iy1; 
+    const angle = Math.atan2(dy, dx);
 
-            // 3. Arrowhead Calculation (The "Wings")
-            const headAngle = Math.PI / 6; // 30 degrees
-            const p3x = x2 - size * Math.cos(angle - headAngle);
-            const p3y = y2 - size * Math.sin(angle - headAngle);
-            const p4x = x2 - size * Math.cos(angle + headAngle);
-            const p4y = y2 - size * Math.sin(angle + headAngle);
+    ctx.clearRect(0, 0, canvas.width, H);
+    ctx.strokeStyle = '#0f0';
+    ctx.lineWidth = 2;
 
-            // Draw Head
-            ctx.beginPath();
-            ctx.moveTo(x2, y2);
-            ctx.lineTo(p3x, p3y);
-            ctx.moveTo(x2, y2);
-            ctx.lineTo(p4x, p4y);
-            ctx.stroke();
+    // 3. Draw Main Line
+    ctx.beginPath();
+    ctx.moveTo(x1, iy1);
+    ctx.lineTo(x2, iy2);
+    ctx.stroke();
 
-            // 4. Space-Delimited Output
-            let out = "--- VECTOR LEADER ---\n";
-            out += `${x1.toFixed(3)} ${y1.toFixed(3)} ; Start\n`;
-            out += `${x2.toFixed(3)} ${y2.toFixed(3)} ; End\n`;
-            out += "--- ARROW WINGS ---\n";
-            out += `${p3x.toFixed(3)} ${p3y.toFixed(3)}\n`;
-            out += `${p4x.toFixed(3)} ${p4y.toFixed(3)}`;
-            document.getElementById('output').value = out;
-        }
+    // 4. Arrowhead (Wings)
+    const headAngle = Math.PI / 6;
+    const p3x = x2 - size * Math.cos(angle - headAngle);
+    const p3y = iy2 - size * Math.sin(angle - headAngle);
+    const p4x = x2 - size * Math.cos(angle + headAngle);
+    const p4y = iy2 - size * Math.sin(angle + headAngle);
+
+    ctx.beginPath();
+    ctx.moveTo(x2, iy2);
+    ctx.lineTo(p3x, p3y);
+    ctx.moveTo(x2, iy2);
+    ctx.lineTo(p4x, p4y);
+    ctx.stroke();
+
+    // 5. Output (Keeps raw coordinates or inverted based on preference)
+    document.getElementById('output').value = 
+        `${x1.toFixed(3)} ${y1.toFixed(3)}\n${x2.toFixed(3)} ${y2.toFixed(3)}`;
+}
         draw();
     </script>
 </body>
