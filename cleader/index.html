@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WallyCAD :: Circle-Center Leader</title>
+    <style>
+        body { background: #121212; color: #0f0; font-family: monospace; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        canvas { border: 1px solid #444; background: #000; }
+        textarea { width: 100%; height: 350px; background: #050505; color: #0f0; border: 1px solid #333; font-size: 12px; }
+        .ui input { background: #222; color: #0ff; border: 1px solid #444; width: 65px; margin-bottom: 8px; }
+        label { display: block; font-size: 11px; color: #888; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h3>WallyCAD :: Circle-Center Vector</h3>
+    <div class="grid">
+        <div class="ui">
+            <label>Leader Start (X1, Y1)</label>
+            <input type="number" id="x1" value="50"> <input type="number" id="y1" value="50">
+            
+            <label>Circle Center (CX, CY)</label>
+            <input type="number" id="cx" value="300"> <input type="number" id="cy" value="300">
+            
+            <label>Circle Radius (R)</label>
+            <input type="number" id="radius" value="80">
+
+            <button onclick="calculate()">Generate Leader</button>
+            <label>Wally Output</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+        <canvas id="vp" width="500" height="500"></canvas>
+    </div>
+
+    <script>
+        function calculate() {
+            const canvas = document.getElementById('vp');
+            const ctx = canvas.getContext('2d');
+            const H = canvas.height;
+
+            // Inputs (Cartesian)
+            const x1 = parseFloat(document.getElementById('x1').value);
+            const y1 = parseFloat(document.getElementById('y1').value);
+            const cx = parseFloat(document.getElementById('cx').value);
+            const cy = parseFloat(document.getElementById('cy').value);
+            const R = parseFloat(document.getElementById('radius').value);
+
+            // 1. Vector Clipping Logic
+            const dx = cx - x1;
+            const dy = cy - y1;
+            const D = Math.sqrt(dx*dx + dy*dy);
+            
+            // Intersection Point (P2)
+            const f = (D - R) / D;
+            const x2 = x1 + dx * f;
+            const y2 = y1 + dy * f;
+
+            // 2. Render with Inverted Y
+            ctx.clearRect(0, 0, 500, H);
+            
+            // Draw Circle
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(cx, H - cy, R, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw Leader
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, H - y1);
+            ctx.lineTo(x2, H - y2);
+            ctx.stroke();
+
+            // Arrowhead at P2 (pointing to Center)
+            const angle = Math.atan2(H - cy - (H - y2), cx - x2);
+            const s = 15; // Arrow size
+            const headAngle = Math.PI / 6;
+            
+            ctx.beginPath();
+            ctx.moveTo(x2, H - y2);
+            ctx.lineTo(x2 - s * Math.cos(angle - headAngle), H - y2 - s * Math.sin(angle - headAngle));
+            ctx.moveTo(x2, H - y2);
+            ctx.lineTo(x2 - s * Math.cos(angle + headAngle), H - y2 - s * Math.sin(angle + headAngle));
+            ctx.stroke();
+
+            // 3. Wally Output
+            document.getElementById('output').value = 
+                `--- CIRCLE ---\nCENTER: ${cx.toFixed(3)} ${cy.toFixed(3)}\nRADIUS: ${R}\n\n` +
+                `--- LEADER (CARTE) ---\nSTART: ${x1.toFixed(3)} ${y1.toFixed(3)}\nEND:   ${x2.toFixed(3)} ${y2.toFixed(3)}`;
+        }
+        calculate();
+    </script>
+</body>
+</html>
