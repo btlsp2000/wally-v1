@@ -171,12 +171,34 @@ class M {
     perp(){return new M(-this.y,this.x)} 
 }
 
-function VIA(P1,v1,P2,v2,th){
-    const det=v1.cross(v2); if(Math.abs(det)<1e-9)return null;
-    const t=(P2.sub(P1).x*v2.y - P2.sub(P1).y*v2.x)/det; const I=P1.add(v1.mul(t));
-    const mv=v1.mul(-1).add(v2).norm(); const d = v1.mul(-1).dot(mv);
-    const sq = Math.max(0, 1 - d*d); const sm = sq === 0 ? 0 : (th/2)/Math.sqrt(sq);
-    return {I, In:I.add(mv.mul(sm)), Out:I.sub(mv.mul(sm)), Turn:det>0?'L':'R'};
+function VIA(P1, v1, P2, v2, th) {
+    const det = v1.cross(v2);
+    if (Math.abs(det) < 1e-9) return null; // Parallel lines check
+
+    const t = (P2.sub(P1).x * v2.y - P2.sub(P1).y * v2.x) / det;
+    const I = P1.add(v1.mul(t));
+    
+    // Calculate the miter vector (bisector)
+    const mv = v1.mul(-1).add(v2).norm();
+    const d = v1.mul(-1).dot(mv);
+    const sq = Math.max(0, 1 - d * d);
+    
+    // Scalar magnitude of the offset
+    let sm = sq === 0 ? 0 : (th / 2) / Math.sqrt(sq);
+
+    // --- CLIPPING LIMIT LOGIC ---
+    const miterLimit = th * 5; // Cap at 5x thickness
+    if (sm > miterLimit) {
+        sm = miterLimit; // "Clip" the spike
+    }
+    // ----------------------------
+
+    return {
+        I, 
+        In: I.add(mv.mul(sm)), 
+        Out: I.sub(mv.mul(sm)), 
+        Turn: det > 0 ? 'L' : 'R'
+    };
 }
 
 // ==========================================
