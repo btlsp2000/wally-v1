@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WALLY v1.0.10 | COMMERCIAL STABLE</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <style>
+        /* UI Color Palette: Optimized for high-contrast drafting */
+        :root { --bg: #f5f5f5; --cad-bg: #ffffff; --cmd-bg: #000000; --accent: #000000; --text: #000000; --dim: #666; --sel: #ff0000; --print: #000000; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+        
+        #toolbar { height: 40px; background: #eee; border-bottom: 2px solid #000; display: flex; align-items: center; padding: 0 10px; gap: 5px; flex-shrink: 0; z-index: 1000; position: relative; }
+        .menu-btn { cursor: pointer; color: var(--accent); font-size: 20px; font-weight: bold; padding: 0 5px; z-index: 9999; }
+
+        #workspace { flex-grow: 1; display: flex; position: relative; overflow: hidden; }
+        #sidebar { width: 260px; background: #fff; border-right: 2px solid #000; display: flex; flex-direction: column; z-index: 2; overflow-y: auto; }
+        #canvas-area { flex-grow: 1; position: relative; background: var(--cad-bg); cursor: crosshair; }
+        #cmd-bar { height: 30px; background: var(--cmd-bg); border-top: 1px solid #000; display: flex; align-items: center; padding: 0 5px; font-size: 12px; flex-shrink: 0; }
+        
+        button { background: #fff; border: 1px solid #000; color: #000; padding: 4px 8px; font-family: inherit; font-size: 11px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #000; color: #fff; }
+        
+        .panel { padding: 10px; border-bottom: 1px solid #ddd; }
+        .panel-title { font-size: 11px; font-weight: bold; color: #000; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; text-decoration: underline; }
+        
+        input, select, textarea { background: #fff; border: 1px solid #000; color: #000; padding: 4px; font-family: inherit; font-size: 11px; width: 100%; box-sizing: border-box; }
+        .control-row { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
+        .label-sm { font-size: 10px; color: #444; width: 45px; flex-shrink: 0; }
+        
+        #cmd-prompt { color: #00ff00; margin-right: 5px; font-weight: bold; }
+        #cmd-input { border: none; background: transparent; color: #00ff00; font-size: 12px; flex-grow: 1; outline: none; }
+        
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 4px; font-size: 11px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .list-row.selected { background: #000; color: #fff; }
+
+        #library { position: absolute; top: 40px; left: 10px; width: 220px; background: #fff; border: 2px solid #000; display: none; z-index: 9999; padding: 10px; box-shadow: 5px 5px 0px rgba(0,0,0,0.2); }
+        .lib-item { padding: 8px 5px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 11px; color: #000; }
+        .lib-item:hover { background: #000; color: #fff; }
+        
+        /* HAL MODE: Presentation Inversion */
+        body.hal-mode { --cad-bg: #000; --text: #fff; }
+        body.hal-mode #sidebar, body.hal-mode #toolbar, body.hal-mode #cmd-bar { display: none; }
+        body.hal-mode #canvas-area { width: 100vw; height: 100vh; background: black; }
+        #hal-exit { display: none; position: absolute; top: 20px; right: 20px; z-index: 100; background: red; color: white; border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; cursor: pointer; font-weight: bold; }
+        body.hal-mode #hal-exit { display: block; }
+
+        .overlay-bg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
+        .overlay-content { background: #fff; width: 85%; max-width: 800px; height: 85%; overflow-y: auto; padding: 40px; border: 2px solid #000; position: relative; display: flex; flex-direction: column; color: #000; }
+        
+        #nice-title { position: fixed; background: #000; color: #fff; border: 1px solid #fff; padding: 5px 8px; font-family: 'Consolas', monospace; font-size: 11px; pointer-events: none; z-index: 10000; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <div class="menu-btn" onclick="toggleLibrary()">☰</div>
+        <span style="font-weight:900; color:#000; margin-right:10px;">WALLY v1.0.10</span>
+        <button onclick="fileNew()">NEW</button>
+        <button onclick="fileSave()">SAVE</button>
+        <button onclick="fileLoad()">LOAD</button>
+        <span style="width:2px; height:20px; background:#000; margin:0 5px;"></span>
+        <button onclick="exec('WALL')">WALL</button>
+        <button onclick="exec('CIRCLE')">CIRCLE</button>
+        <button onclick="exec('STAIR')">STAIR</button>
+        <button onclick="exec('DIM')">DIM</button>
+        <button onclick="exec('TEXT')">TEXT</button>
+        <span style="width:2px; height:20px; background:#000; margin:0 5px;"></span>
+        <button onclick="exportDXF()">DXF</button>
+        <button onclick="exec('HAL')">HAL VIEW</button>
+        <span style="flex-grow:1;"></span>
+        <button onclick="exec('HELP')" style="background:#000; color:#fff;">MANUAL</button>
+    </div>
+
+    <div id="library">
+        <div style="font-weight:bold; margin-bottom:5px; text-decoration:underline;">PRESETS</div>
+        <div class="lib-item" onclick="exec('BOOKMARK')">Wally Bookmark Template</div>
+    </div>
+
+    <div id="workspace">
+        <div id="sidebar">
+            <div class="panel">
+                <div class="panel-title">PLOT SETTINGS</div>
+                <div class="control-row">
+                    <span class="label-sm">Paper</span>
+                    <select id="paperSize"><option value="LETTER">Letter</option><option value="TABLOID">Tabloid</option></select>
+                    <select id="paperOrient" style="width:40px;"><option value="L">L</option><option value="P">P</option></select>
+                </div>
+                <div class="control-row"><span class="label-sm">Units</span><select id="unitMap"><option value="IN">Inches</option><option value="FT">Feet</option></select></div>
+                <div class="control-row"><span class="label-sm">Scale</span><input type="text" id="printScale" value="1/4&quot; = 1'-0&quot;"></div>
+                <div class="control-row"><button onclick="autoFitScale()" style="flex:1">AUTO FIT</button><button onclick="exportPDF()" style="background:#000; color:#fff; flex:1">PDF PLOT</button></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">PROPERTIES</div>
+                <div class="control-row"><span class="label-sm">Type</span><select id="prop-type" onchange="updateProp()"><option value="WALL">Wall</option><option value="LINE">Line</option><option value="CIRCLE">Circle</option><option value="DIM">Dim</option><option value="TEXT">Text</option><option value="STAIR">Stair</option></select></div>
+                <div class="control-row"><span class="label-sm">Width/R</span><input id="prop-thick" type="number" step="0.1" oninput="updateProp()"></div>
+                <div class="control-row"><span class="label-sm">Depth/T</span><input id="prop-thickEnd" type="number" step="0.1" oninput="updateProp()"></div>
+                <div class="control-row"><span class="label-sm">Text</span><input id="prop-textStr" type="text" oninput="updateProp()"></div>
+                <div style="font-size:10px; font-weight:bold; margin-top:5px;">COORDINATES (X,Y):</div>
+                <textarea id="prop-geo" style="height:80px; border:1px solid #000;" oninput="updateProp()"></textarea>
+            </div>
+
+            <div class="panel" style="flex-grow:1; display:flex; flex-direction:column;">
+                <div class="panel-title">ENTITY LEDGER</div>
+                <div id="ent-list" style="overflow-y:auto; flex-grow:1;"></div>
+            </div>
+        </div>
+
+        <div id="canvas-area">
+            <canvas id="canvas"></canvas>
+            <div id="hal-exit" onclick="exec('HAL')">EXIT</div>
+        </div>
+    </div>
+
+    <div id="cmd-bar">
+        <span id="cmd-prompt">COMMAND:></span>
+        <input id="cmd-input" type="text" autocomplete="off" placeholder="Enter command...">
+        <span id="cmd-history" style="color:#888; margin-left:10px; font-size:10px;"></span>
+    </div>
+
+<script>
+// ==========================================
+// CORE STATE & RENDERING
+// ==========================================
+let state = {
+    ents: [],
+    layers: { '0': { color: '#000000', visible: true } },
+    currentLayer: '0', selection: null, view: { x: 0, y: 0, scale: 10, panStart: null }, mouse: { x: 0, y: 0, worldX: 0, worldY: 0 }
+};
+
+function draw() {
+    const cvs = document.getElementById('canvas'); const ctx = cvs.getContext('2d');
+    const isHal = document.body.classList.contains('hal-mode');
+    
+    ctx.fillStyle = isHal ? "black" : "white";
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    
+    // Grid (Only in UI Mode)
+    if (!isHal) {
+        ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.beginPath();
+        const step = 10 * state.view.scale; const ox = state.view.x % step, oy = state.view.y % step;
+        for(let x=ox; x<cvs.width; x+=step) { ctx.moveTo(x,0); ctx.lineTo(x,cvs.height); }
+        for(let y=oy; y<cvs.height; y+=step) { ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); }
+        ctx.stroke();
+    }
+
+    ctx.save(); ctx.translate(state.view.x, state.view.y); ctx.scale(state.view.scale, -state.view.scale);
+
+    state.ents.forEach(ent => {
+        const isSel = state.selection === ent;
+        // Forced Solid Black unless in HAL mode (White)
+        ctx.strokeStyle = isSel ? "red" : (isHal ? "white" : "black");
+        ctx.fillStyle = isSel ? "red" : (isHal ? "white" : "black");
+        ctx.lineWidth = (isSel ? 3 : 1.5) / state.view.scale;
+
+        const pts = parseCoords(ent.geo); if(pts.length===0) return;
+
+        if (ent.type === 'CIRCLE') {
+            ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, ent.thick || 1, 0, Math.PI*2); ctx.stroke();
+        } else if (ent.type === 'TEXT') {
+            ctx.save(); ctx.translate(pts[0].x, pts[0].y); ctx.scale(1, -1);
+            ctx.font = `bold ${ent.thick || 5}px sans-serif`; ctx.fillText(ent.textStr || "TEXT", 0, 0); ctx.restore();
+        } else if (ent.type === 'STAIR') {
+            const p1=pts[0], p2=pts[1]; const dx=p2.x-p1.x, dy=p2.y-p1.y;
+            const N=parseInt(ent.textStr)||10;
+            for(let i=0; i<N; i++) {
+                const t=i/(N-1||1); const cx=p1.x+dx*t, cy=p1.y+dy*t;
+                ctx.strokeRect(cx - (ent.thick||36)/2, cy, ent.thick||36, -(ent.thickEnd||11));
+            }
+        } else {
+            ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+        }
+    });
+    ctx.restore();
+}
+
+// Utility Math & Logic
+function parseCoords(txt) { 
+    const pts=[]; 
+    txt.replace(/[\t\n\r,]+/g,' ').replace(/\s+/g,' ').trim().split(' ').forEach((v,i,a)=>{ 
+        if(i%2===0 && a[i+1]){ let x=parseFloat(v), y=parseFloat(a[i+1]); if(!isNaN(x)&&!isNaN(y)) pts.push({x,y}); } 
+    }); 
+    return pts; 
+}
+
+function exec(cmdStr) {
+    const cmd = cmdStr.trim().toUpperCase(); 
+    if (cmd === 'WALL') createEnt('WALL', '0', "0,0\n20,0\n20,15", 5);
+    else if (cmd === 'CIRCLE') createEnt('CIRCLE', '0', "0,0", 5);
+    else if (cmd === 'STAIR') createEnt('STAIR', '0', "0,0\n100,0", 36, 11, "10");
+    else if (cmd === 'HAL') { document.body.classList.toggle('hal-mode'); resize(); }
+    else if (cmd === 'NEW') { state.ents = []; selectEnt(null); draw(); }
+    draw();
+}
+
+function createEnt(type, layer, geo, thick, thickEnd=0, textStr="") { 
+    const ent={id:Date.now(), type, layer, geo, thick, thickEnd, textStr}; 
+    state.ents.push(ent); selectEnt(ent); draw(); return ent; 
+}
+
+function selectEnt(ent) {
+    state.selection=ent; renderList();
+    if(ent) { 
+        document.getElementById('prop-type').value=ent.type; 
+        document.getElementById('prop-thick').value=ent.thick; 
+        document.getElementById('prop-geo').value=ent.geo; 
+    }
+    draw();
+}
+
+function renderList() {
+    const list=document.getElementById('ent-list'); list.innerHTML='';
+    state.ents.forEach(ent => {
+        const row=document.createElement('div'); row.className='list-row'+(state.selection===ent?' selected':'');
+        row.innerText=`[${ent.type}] Entity ${ent.id.toString().slice(-4)}`; row.onclick=()=>selectEnt(ent); list.appendChild(row);
+    });
+}
+
+function resize() { 
+    const cvs=document.getElementById('canvas'); 
+    cvs.width=document.getElementById('canvas-area').clientWidth; 
+    cvs.height=document.getElementById('canvas-area').clientHeight; 
+    draw(); 
+}
+
+window.onload = () => { resize(); window.addEventListener('resize', resize); draw(); };
+document.getElementById('cmd-input').addEventListener('keydown', e => { if(e.key === 'Enter') { exec(e.target.value); e.target.value=''; } });
+
+</script>
+</body>
+</html>
