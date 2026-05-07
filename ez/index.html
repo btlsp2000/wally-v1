@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD | EZ Index</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: #f4f4f4; color: #333; line-height: 1.6; padding: 20px; }
+        header { border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px; }
+        #gatekeeper { text-align: center; margin-top: 100px; }
+        #main-content { display: none; } /* Hidden by default */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .box { background: #fff; padding: 15px; border: 1px solid #ccc; box-shadow: 4px 4px 0px #888; }
+        input[type="password"] { padding: 10px; font-size: 1.2em; border: 2px solid #333; }
+        button { padding: 10px 20px; font-size: 1.2em; background: #333; color: #fff; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        .highlight { background: #fff5ad; padding: 2px 5px; }
+    </style>
+</head>
+<body>
+
+<div id="gatekeeper">
+    <h2>RESTRICTED ACCESS</h2>
+    <p>Enter the "Sons of Dale" Access Code:</p>
+    <input type="password" id="passInput" placeholder="Password">
+    <button onclick="checkPass()">UNLOCK</button>
+</div>
+
+<div id="main-content">
+    <header>
+        <h1>WallyCAD / EZ</h1>
+        <p><em>"Slide Through the Day" - Integrated Log for Bill & Mike</em></p>
+    </header>
+
+    <div class="dashboard">
+        <div class="box">
+            <h2>🚀 Project Status</h2>
+            <ul>
+                <li><strong>Room 113 Extraction:</strong> <span class="highlight">Deadline June 1st</span></li>
+                <li><strong>The Golden Triangle:</strong> Lineage Grid Locked</li>
+                <li><strong>WallyCAD Engine:</strong> Sydney Bridge (12:12 Slope) Active</li>
+            </ul>
+        </div>
+
+        <div class="box">
+            <h2>🧬 The Lineage Axis</h2>
+            <table>
+                <tr><th>Name</th><th>Birth</th><th>Location</th></tr>
+                <tr><td>Bill (Bei)</td><td>1951</td><td>Oregon</td></tr>
+                <tr><td>Mike</td><td>1953</td><td>Oregon</td></tr>
+                <tr><td>David</td><td>1962</td><td>SoCal</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2>📝 Full Transcript Integration</h2>
+        <div style="max-height: 400px; overflow-y: scroll; border: 1px inset #eee; padding: 10px; background: #fafafa; white-space: pre-wrap;">
+            [Insert full conversation text here or use HAL's summary below]
+            
+            - GOAL: Delegate life to HAL with absolute safeguards.
+            - PROTOCOL: Go to bed assured; wake assured.
+            - LINEAGE: Dale (d. 1989), Betty Jo (d. 2012). 
+            - ROLES: Bill, Mike, David are all Brothers, Sons, and Fathers.
+            - GEOGRAPHY: Portland (Bill/Mike) vs. SoCal (David).
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkPass() {
+        const p = document.getElementById('passInput').value;
+        // Set your password here (e.g., "1962" or "Tonnesen")
+        if (p === "1962") { 
+            document.getElementById('gatekeeper').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        } else {
+            alert("Access Denied.");
+        }
+    }
+</script>
+
+</body>
+</html>
