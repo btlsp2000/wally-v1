@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sqfont Generator | LKA</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --panel-bg: #111;
+            --text-main: #e0e0e0;
+            --qc-yellow: #fde89c;
+            --qc-cyan: #3df5f5;
+            --qc-pink: #f5a3a3;
+            --canvas-line: #ffffff;
+            --canvas-border: #2a3a2a; /* Faint green border */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- HAL VIEW CANVAS --- */
+        .hal-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            padding: 20px;
+        }
+
+        .hal-header {
+            background: #333;
+            color: #ccc;
+            padding: 2px 8px;
+            font-size: 12px;
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            background-color: #000;
+            border: 1px solid var(--canvas-border);
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+            margin: auto;
+        }
+
+        /* --- QUICKCLICK PANEL --- */
+        .qc-container {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: var(--panel-bg);
+        }
+
+        .stats {
+            font-size: 12px;
+            font-weight: bold;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #fff;
+            color: #333;
+            font-size: 18px;
+            font-family: monospace;
+            padding: 10px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            resize: none;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        /* Keyboard Grid */
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .key {
+            background-color: var(--qc-yellow);
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .key:active { transform: scale(0.95); }
+
+        /* Cyan Core Keys */
+        .key.core { background-color: var(--qc-cyan); }
+
+        /* Action Row */
+        .action-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .action-key {
+            background: #fff;
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .action-key.del { background: var(--qc-pink); }
+
+        .footer {
+            text-align: center;
+            margin-top: auto;
+            font-size: 12px;
+            color: var(--qc-cyan);
+        }
+        .footer span { color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="hal-container">
+        <div class="hal-header">HAL VIEW</div>
+        <canvas id="halCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="qc-container">
+        <div class="stats" id="statsDisplay">WORDS: 0 | CHARS: 0</div>
+        <textarea id="textInput" placeholder="Start clicking..."></textarea>
+
+        <div class="keyboard" id="qcKeyboard">
+            <button class="key" onclick="typeChar('c')">c</button>
+            <button class="key core" onclick="typeChar('s')">s</button>
+            <button class="key core" onclick="typeChar('e')">e</button>
+            <button class="key core" onclick="typeChar('n')">n</button>
+            <button class="key" onclick="typeChar('w')">w</button>
+            <button class="key" onclick="typeChar('d')">d</button>
+            <button class="key core" onclick="typeChar('h')">h</button>
+            <button class="key core" onclick="typeChar('o')">o</button>
+            <button class="key core" onclick="typeChar('r')">r</button>
+            <button class="key" onclick="typeChar('y')">y</button>
+            <button class="key" onclick="typeChar('f')">f</button>
+            <button class="key core" onclick="typeChar('i')">i</button>
+            <button class="key core" onclick="typeChar('t')">t</button>
+            <button class="key core" onclick="typeChar('a')">a</button>
+            <button class="key" onclick="typeChar('u')">u</button>
+            <button class="key" onclick="typeChar('g')">g</button>
+            <button class="key" onclick="typeChar('k')">k</button>
+            <button class="key" onclick="typeChar('l')">l</button>
+            <button class="key" onclick="typeChar('m')">m</button>
+            <button class="key" onclick="typeChar('p')">p</button>
+            <button class="key" onclick="typeChar('b')">b</button>
+            <button class="key" onclick="typeChar('j')">j</button>
+            <button class="key" onclick="typeChar('q')">q</button>
+            <button class="key" onclick="typeChar('v')">v</button>
+            <button class="key" onclick="typeChar('x')">x</button>
+        </div>
+
+        <div class="action-row">
+            <button class="action-key" onclick="typeChar(' ')">space</button>
+            <button class="action-key" onclick="typeChar('\n')">new line</button>
+            <button class="action-key del" onclick="backspace()">⌫</button>
+        </div>
+
+        <div class="footer">
+            The Golden Triangle <span>| Powered by L K A</span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('halCanvas');
+        const ctx = canvas.getContext('2d');
+        const input = document.getElementById('textInput');
+        const stats = document.getElementById('statsDisplay');
+
+        // Text input handling
+        function typeChar(char) {
+            input.value += char;
+            updateStats();
+            renderGeometry();
+        }
+
+        function backspace() {
+            input.value = input.value.slice(0, -1);
+            updateStats();
+            renderGeometry();
+        }
+
+        function updateStats() {
+            const text = input.value;
+            const chars = text.length;
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            stats.innerText = `WORDS: ${words} | CHARS: ${chars}`;
+        }
+
+        // --- SQFONT GEOMETRY ENGINE ---
+        function renderGeometry() {
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+
+            const text = input.value.toLowerCase();
+            if (text.length === 0) return;
+
+            // Get the LAST character typed to display its geometry
+            const lastChar = text.slice(-1);
+
+            // Bounding Box Parameters (Scale to canvas)
+            const margin = 50;
+            const size = canvas.width - (margin * 2);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.beginPath();
+
+            if (lastChar === 'a') {
+                // The Golden Triangle 'A' Geometry
+                
+                // 1. Outer Square
+                ctx.rect(margin, margin, size, size);
+                
+                // 2. Inscribed Circle
+                ctx.moveTo(cx + size/2, cy);
+                ctx.arc(cx, cy, size/2, 0, Math.PI * 2);
+                
+                // 3. The Triangle (The 'A' legs)
+                // Apex at top center, legs to bottom corners
+                ctx.moveTo(cx, margin); 
+                ctx.lineTo(margin, margin + size); 
+                ctx.moveTo(cx, margin);
+                ctx.lineTo(margin + size, margin + size);
+
+                // 4. The Crossbar (Golden Ratio roughly or midpoint)
+                const barY = cy; // Midpoint
+                // Calculate intersection of horizontal line at 'barY' with the angled legs
+                const barWidthHalf = (size/2) * ((margin + size - barY) / size);
+                ctx.moveTo(cx - barWidthHalf, barY);
+                ctx.lineTo(cx + barWidthHalf, barY);
+            } 
+            // Add more letter definitions here...
+            
+            ctx.stroke();
+        }
+
+        // Listen for physical keyboard typing too
+        input.addEventListener('input', () => {
+            updateStats();
+            renderGeometry();
+        });
+    </script>
+</body>
+</html>
