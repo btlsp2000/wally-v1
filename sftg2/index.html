@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sqfont Creator | LKA</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --panel-bg: #111;
+            --text-main: #e0e0e0;
+            --qc-yellow: #fde89c;
+            --qc-cyan: #3df5f5;
+            --qc-pink: #f5a3a3;
+            --canvas-line: #ffffff;
+            --canvas-guide: #334433; 
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* --- HAL VIEW CANVAS --- */
+        .hal-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hal-header {
+            background: #333;
+            color: #ccc;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            align-self: flex-start;
+        }
+
+        canvas {
+            background-color: #000;
+            border: 1px solid #444;
+            box-shadow: 0 0 20px rgba(0,255,0,0.1);
+        }
+
+        /* --- QUICKCLICK PANEL --- */
+        .qc-container {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: var(--panel-bg);
+        }
+
+        .display-panel {
+            background: #000;
+            border: 2px solid #555;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .sequence-display {
+            font-size: 24px;
+            color: var(--qc-cyan);
+            min-height: 30px;
+            letter-spacing: 2px;
+        }
+
+        .instructions {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Keyboard Grid */
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .key {
+            background-color: var(--qc-yellow);
+            color: #000;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.1s;
+        }
+
+        .key:active { transform: scale(0.92); }
+        .key.core { background-color: var(--qc-cyan); }
+        
+        /* Node highlight effect */
+        .key.active-node {
+            background-color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .action-key {
+            background: #444;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            padding: 15px 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .action-key:hover { background: #555; }
+        .action-key.space { background: var(--qc-cyan); color: #000; }
+        .action-key.del { background: var(--qc-pink); color: #000; }
+
+    </style>
+</head>
+<body>
+
+    <div class="hal-container">
+        <div class="hal-header">HAL VIEW : SQFONT GEOMETRY</div>
+        <canvas id="halCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <div class="qc-container">
+        <div class="display-panel">
+            <div class="sequence-display" id="seqDisplay"></div>
+            <div class="instructions">Type keys to draw. Space = New Stroke. Del = Backspace.</div>
+        </div>
+
+        <div class="keyboard" id="qcKeyboard">
+            <button class="key" id="key_c" onclick="addNode('c')">c</button>
+            <button class="key core" id="key_s" onclick="addNode('s')">s</button>
+            <button class="key core" id="key_e" onclick="addNode('e')">e</button>
+            <button class="key core" id="key_n" onclick="addNode('n')">n</button>
+            <button class="key" id="key_w" onclick="addNode('w')">w</button>
+            
+            <button class="key" id="key_d" onclick="addNode('d')">d</button>
+            <button class="key core" id="key_h" onclick="addNode('h')">h</button>
+            <button class="key core" id="key_o" onclick="addNode('o')">o</button>
+            <button class="key core" id="key_r" onclick="addNode('r')">r</button>
+            <button class="key" id="key_y" onclick="addNode('y')">y</button>
+            
+            <button class="key" id="key_f" onclick="addNode('f')">f</button>
+            <button class="key core" id="key_i" onclick="addNode('i')">i</button>
+            <button class="key core" id="key_t" onclick="addNode('t')">t</button>
+            <button class="key core" id="key_a" onclick="addNode('a')">a</button>
+            <button class="key" id="key_u" onclick="addNode('u')">u</button>
+            
+            <button class="key" id="key_g" onclick="addNode('g')">g</button>
+            <button class="key" id="key_k" onclick="addNode('k')">k</button>
+            <button class="key" id="key_l" onclick="addNode('l')">l</button>
+            <button class="key" id="key_m" onclick="addNode('m')">m</button>
+            <button class="key" id="key_p" onclick="addNode('p')">p</button>
+            
+            <button class="key" id="key_b" onclick="addNode('b')">b</button>
+            <button class="key" id="key_j" onclick="addNode('j')">j</button>
+            <button class="key" id="key_q" onclick="addNode('q')">q</button>
+            <button class="key" id="key_v" onclick="addNode('v')">v</button>
+            <button class="key" id="key_x" onclick="addNode('x')">x</button>
+        </div>
+
+        <div class="action-row">
+            <button class="action-key" onclick="clearCanvas()">CLEAR</button>
+            <button class="action-key space" onclick="newStroke()">SPACE (Pen Up)</button>
+            <button class="action-key del" onclick="backspace()">⌫</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('halCanvas');
+        const ctx = canvas.getContext('2d');
+        const seqDisplay = document.getElementById('seqDisplay');
+
+        // The QC Coordinate Map (Col, Row) 0-4
+        const qcMap = {
+            'c':[0,0], 's':[1,0], 'e':[2,0], 'n':[3,0], 'w':[4,0],
+            'd':[0,1], 'h':[1,1], 'o':[2,1], 'r':[3,1], 'y':[4,1],
+            'f':[0,2], 'i':[1,2], 't':[2,2], 'a':[3,2], 'u':[4,2],
+            'g':[0,3], 'k':[1,3], 'l':[2,3], 'm':[3,3], 'p':[4,3],
+            'b':[0,4], 'j':[1,4], 'q':[2,4], 'v':[3,4], 'x':[4,4]
+        };
+
+        // State: Array of strokes, where each stroke is an array of letters
+        let strokes = [[]]; 
+
+        // Drawing Constants
+        const padding = 50;
+        const gridWidth = canvas.width - (padding * 2);
+        const cell = gridWidth / 4; // 4 segments between 5 nodes
+
+        function getCoords(char) {
+            const gridPos = qcMap[char];
+            return {
+                x: padding + (gridPos[0] * cell),
+                y: padding + (gridPos[1] * cell)
+            };
+        }
+
+        function drawGuides() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Vitruvian Background Guides
+            ctx.strokeStyle = '#223322';
+            ctx.lineWidth = 1;
+            
+            // Square
+            ctx.strokeRect(padding, padding, gridWidth, gridWidth);
+            
+            // Inscribed Circle
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, gridWidth/2, 0, Math.PI*2);
+            ctx.stroke();
+
+            // 5x5 Grid Dots
+            ctx.fillStyle = '#444';
+            for(let r=0; r<5; r++) {
+                for(let c=0; c<5; c++) {
+                    ctx.beginPath();
+                    ctx.arc(padding + (c*cell), padding + (r*cell), 3, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function renderGeometry() {
+            drawGuides();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Draw Paths
+            strokes.forEach(stroke => {
+                if (stroke.length === 0) return;
+                
+                ctx.beginPath();
+                const startNode = getCoords(stroke[0]);
+                ctx.moveTo(startNode.x, startNode.y);
+
+                for (let i = 1; i < stroke.length; i++) {
+                    const node = getCoords(stroke[i]);
+                    ctx.lineTo(node.x, node.y);
+                }
+                ctx.stroke();
+            });
+
+            // Highlight Active Nodes
+            document.querySelectorAll('.key').forEach(k => k.classList.remove('active-node'));
+            strokes.flat().forEach(char => {
+                if(document.getElementById('key_' + char)) {
+                    document.getElementById('key_' + char).classList.add('active-node');
+                }
+            });
+
+            // Update Display Text
+            let displayText = strokes.map(s => s.join('')).join(' ');
+            seqDisplay.innerText = displayText.toUpperCase();
+        }
+
+        function addNode(char) {
+            strokes[strokes.length - 1].push(char);
+            renderGeometry();
+        }
+
+        function newStroke() {
+            if (strokes[strokes.length - 1].length > 0) {
+                strokes.push([]);
+                renderGeometry();
+            }
+        }
+
+        function backspace() {
+            let currentStroke = strokes[strokes.length - 1];
+            if (currentStroke.length > 0) {
+                currentStroke.pop();
+            } else if (strokes.length > 1) {
+                strokes.pop();
+                strokes[strokes.length - 1].pop(); // Pop the last char of the previous stroke too
+            }
+            renderGeometry();
+        }
+
+        function clearCanvas() {
+            strokes = [[]];
+            renderGeometry();
+        }
+
+        // Listen for actual keyboard presses
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (qcMap[key]) {
+                addNode(key);
+            } else if (e.code === 'Space') {
+                e.preventDefault();
+                newStroke();
+            } else if (e.key === 'Backspace') {
+                backspace();
+            }
+        });
+
+        // Init
+        drawGuides();
+    </script>
+</body>
+</html>
