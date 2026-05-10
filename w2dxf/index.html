@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallyCAD to DXF Converter</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #4CAF50;
+            --accent-hover: #45a049;
+            --border-color: #444;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--panel-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #fff;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        p {
+            color: #aaa;
+            font-size: 0.95em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background-color: #1a1a1a;
+            color: #00ff00; /* Classic CAD green text */
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: scroll;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        #status {
+            font-weight: bold;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #ff5252; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>WallyCAD to DXF</h1>
+    <p>Paste your raw WallyCAD JSON array below and click convert. The tool will automatically parse the "geo" coordinates and download a standard DXF file containing the line entities.</p>
+    
+    <textarea id="jsonInput" placeholder='[\n  {\n    "id": 12345,\n    "type": "WALL",\n    "geo": "0 0\\n1 0\\n1 1\\n0 1\\n0 0",\n    "thick": 0\n  }\n]'></textarea>
+    
+    <div class="controls">
+        <button onclick="processData()">Convert & Download DXF</button>
+        <span id="status"></span>
+    </div>
+</div>
+
+<script>
+    function processData() {
+        const inputStr = document.getElementById('jsonInput').value.trim();
+        const statusEl = document.getElementById('status');
+        
+        if (!inputStr) {
+            setStatus("Please paste JSON data first.", "error");
+            return;
+        }
+
+        try {
+            // 1. Parse the JSON
+            const wallyData = JSON.parse(inputStr);
+            
+            if (!Array.isArray(wallyData)) {
+                throw new Error("Input must be a JSON array.");
+            }
+
+            // 2. Setup DXF Header
+            let dxfOutput = "0\nSECTION\n2\nENTITIES\n";
+            let lineCount = 0;
+
+            // 3. Process Blocks
+            wallyData.forEach(block => {
+                if (!block.geo) return; // Skip if no geometry
+
+                const layerName = block.type ? block.type.toUpperCase() : "WALLY_GEO";
+                
+                // Split by double newlines (handles both \r\n and \n)
+                const shapes = block
