@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sqfont Typesetter | Master Dictionary</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --panel-bg: #111;
+            --text-main: #e0e0e0;
+            --qc-cyan: #3df5f5;
+            --canvas-line: #ffffff;
+            --canvas-guide: #223322; 
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-block {
+            border-left: 4px solid var(--qc-cyan);
+            padding-left: 15px;
+        }
+
+        h1 { margin: 0; font-size: 24px; letter-spacing: 2px; }
+        p { margin: 5px 0 0 0; color: #888; font-size: 12px; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: var(--qc-cyan);
+            font-family: monospace;
+            font-size: 20px;
+            padding: 10px 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--qc-cyan);
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover { background: #444; border-color: var(--qc-cyan); }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            overflow-x: auto;
+            background: #000;
+            border: 1px solid #444;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-block">
+            <h1>SQFONT TYPESETTER</h1>
+            <p>CONTINUOUS STROKE ENGINE | LKA</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="textInput" placeholder="TYPE HERE TO GENERATE SQFONT..." autocomplete="off">
+        <button onclick="exportWallyJSON()">EXPORT WALLY.JSON</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="typeCanvas" height="300"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('typeCanvas');
+        const ctx = canvas.getContext('2d');
+        const textInput = document.getElementById('textInput');
+
+        // --- MASTER SQFONT DICTIONARY ---
+        // Single contiguous stroke geometry based on the QC Matrix
+        const sqfontDict = {
+            'A': ["bexai"], 'B': ["bcyfub"], 'C': ["wdgx"], 'D': ["bcyb"],
+            'E': ["xbfufcw"], 'F': ["bfufcw"], 'G': ["wdgxut"], 'H': ["bcfuwx"],
+            'I': ["qe"], 'J': ["gbxw"], 'K': ["bcfwfx"], 'L': ["cbx"],
+            'M': ["bsqnx"], 'N': ["bcxw"], 'O': ["bcwxb"], 'P': ["bcwuf"],
+            'Q': ["xbcwxt"], 'R': ["bcnafx"], 'S': ["wdub"], 'T': ["cweq"],
+            'U': ["cbxw"], 'V': ["cqw"], 'W': ["cjevw"], 'X': ["bwtcx"],
+            'Y': ["ctwtq"], 'Z': ["cwbx"],
+            
+            '1': ["eq"], '2': ["cwufbx"], '3': ["cwfub"], '4': ["qefu"],
+            '5': ["wcfub"], '6': ["wfbxuf"], '7': ["cwb"], '8': ["bcwufuxb"],
+            '9': ["buwcfu"], '0': ["bcwxb"],
+            
+            ' ': [] // Space character
+        };
+
+        // The QC Coordinate Map (Col, Row) 0-4
+        const qcMap = {
+            'c':[0,0], 's':[1,0], 'e':[2,0], 'n':[3,0], 'w':[4,0],
+            'd':[0,1], 'h':[1,1], 'o':[2,1], 'r':[3,1], 'y':[4,1],
+            'f':[0,2], 'i':[1,2], 't':[2,2], 'a':[3,2], 'u':[4,2],
+            'g':[0,3], 'k':[1,3], 'l':[2,3], 'm':[3,3], 'p':[4,3],
+            'b':[0,4], 'j':[1,4], 'q':[2,4], 'v':[3,4], 'x':[4,4]
+        };
+
+        // Layout Constants
+        const cellSize = 40; 
+        const gridWidth = cellSize * 4; // 4 segments for 5 nodes
+        const letterSpacing = cellSize * 1.5; // Condensed kerning for flow
+        const margin = 50;
+        
+        let currentWallyData = []; // Store geometry for export
+
+        function renderString() {
+            const text = textInput.value.toUpperCase();
+            
+            // Auto-resize canvas width based on string length
+            const totalWidth = (margin * 2) + (text.length * gridWidth) + ((text.length - 1) * letterSpacing);
+            canvas.width = Math.max(1000, totalWidth);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            currentWallyData = []; // Reset export data
+            
+            let offsetX = margin;
+            const offsetY = margin;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                
+                // Draw background guides for the letter block
+                drawGuides(offsetX, offsetY);
+
+                if (sqfontDict[char]) {
+                    drawLetter(sqfontDict[char], offsetX, offsetY);
+                }
+                
+                // Advance X offset for the next letter
+                offsetX += gridWidth + letterSpacing;
+            }
+        }
+
+        function drawGuides(x, y) {
+            ctx.strokeStyle = '#223322';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, gridWidth, gridWidth);
+            
+            ctx.fillStyle = '#333';
+            for(let r=0; r<5; r++) {
+                for(let c=0; c<5; c++) {
+                    ctx.beginPath();
+                    ctx.arc(x + (c*cellSize), y + (r*cellSize), 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawLetter(strokes, offsetX, offsetY) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            strokes.forEach(stroke => {
+                // Split the single continuous string into individual characters
+                const nodes = stroke.replace(/\s+/g, '').split('');
+                if (nodes.length < 2) return;
+
+                ctx.beginPath();
+                let geoString = ""; // Build WallyCAD string
+
+                for (let i = 0; i < nodes.length; i++) {
+                    const nodeKey = nodes[i].toLowerCase();
+                    const gridPos = qcMap[nodeKey];
+                    
+                    if (gridPos) {
+                        // Canvas coordinates
+                        const px = offsetX + (gridPos[0] * cellSize);
+                        const py = offsetY + (gridPos[1] * cellSize);
+                        
+                        // WallyCAD coordinates (Scaled so 1 unit = 1 cell, Y flipped for CAD)
+                        const cadX = (offsetX / cellSize) + gridPos[0];
+                        const cadY = 5 - gridPos[1]; // Flip Y so 0,0 is bottom left
+                        geoString += `${cadX.toFixed(4)} ${cadY.toFixed(4)}\n`;
+
+                        if (i === 0) {
+                            ctx.moveTo(px, py);
+                        } else {
+                            ctx.lineTo(px, py);
+                        }
+                    }
+                }
+                ctx.stroke();
+                
+                // Store in WallyCAD format
+                currentWallyData.push({
+                    "id": Date.now() + Math.random(),
+                    "type": "SQFONT",
+                    "geo": geoString.trim(),
+                    "thick": 0
+                });
+            });
+        }
+
+        function exportWallyJSON() {
+            if (currentWallyData.length === 0) return;
+            
+            const jsonStr = JSON.stringify(currentWallyData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sqfont_${textInput.value.trim() || 'export'}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Event Listeners
+        textInput.addEventListener('input', renderString);
+        
+        // Initial render
+        textInput.value = "SQFONT 2026"; // Default starting text
+        renderString();
+    </script>
+</body>
+</html>
