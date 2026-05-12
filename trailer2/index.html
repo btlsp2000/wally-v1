@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trailer-Mini & Adventure Road | WallyCAD</title>
+    <style>
+        :root {
+            --drafting-blue: #0056b3;
+            --accent-red: #d32f2f;
+            --sidebar-bg: #e9ecef;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR - ADVENTURE ROAD PORTAL */
+        aside {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 2px solid #ccc;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+            margin-bottom: 15px;
+            color: var(--accent-red);
+        }
+        .node-list {
+            list-style: none;
+            padding: 0;
+            font-size: 0.85rem;
+        }
+        .node-list li {
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #bbb;
+        }
+        .node-list a {
+            text-decoration: none;
+            color: #444;
+        }
+        .node-list a:hover { color: var(--drafting-blue); }
+
+        /* MAIN CONTENT AREA */
+        main {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        header {
+            border-bottom: 2px solid #333;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        section {
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 4px 4px 0px #ddd;
+        }
+        h2 { font-size: 1.1rem; border-bottom: 1px solid #eee; color: var(--drafting-blue); }
+        .meta { font-size: 0.75rem; color: #888; display: block; }
+        
+        /* LINKS */
+        .content-link {
+            color: var(--accent-red);
+            text-decoration: none;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+        .content-link:hover { background: #fff8f8; }
+
+        footer { margin-top: 40px; font-size: 0.8rem; opacity: 0.7; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            aside { width: 100%; border-right: none; border-bottom: 2px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: ADVENTURE ROAD (ARMike) -->
+    <aside>
+        <div class="sidebar-title">Adventure Road (ARMike)</div>
+        <p style="font-size: 0.8rem;"><i>Shared Archive & Regional Nodes</i></p>
+        <ul class="node-list">
+            <li><strong>Current Loop:</strong> Portland / Eugene</li>
+            <li><a href="#">[Node] Vegas / Henderson</a></li>
+            <li><a href="#">[Node] Oregon South Coast</a></li>
+            <li><a href="#">[Node] San Bernardino / High Desert</a></li>
+            <li><a href="#">[Node] Eastern Sierra / Fallon</a></li>
+            <li style="margin-top:20px; color: var(--accent-red);"><strong>Family History:</strong></li>
+            <li><a href="#">1966: The Departure Archive</a></li>
+            <li><a href="#">The Golden Triangle Memoirs</a></li>
+            <li><a href="#">LKA Newsletter: The Traveler</a></li>
+        </ul>
+    </aside>
+
+    <!-- MAIN: WALLYCAD TRAILER-MINI -->
+    <main>
+        <header>
+            <h1 style="margin:0;">Trailer-Mini Development</h1>
+            <span style="font-size: 0.9rem;">6.5' Square Chassis | PTP Geometry Engine</span>
+        </header>
+
+        <div class="grid-container">
+            <section>
+                <h2>Technical Plans</h2>
+                <a href="#" class="content-link">Chassis Layout (1/4 Scale)</a>
+                <span class="meta">WallyCAD Generated | April 2026</span>
+                <a href="#" class="content-link">Structural Load Points</a>
+                <span class="meta">PTP Routine Analysis</span>
+            </section>
+
+            <section>
+                <h2>Field Notes & Sketches</h2>
+                <a href="#" class="content-link">Interior Fold-Out Geometry</a>
+                <span class="meta">Modular Woodworking Concepts</span>
+                <a href="#" class="content-link">Low-Drag Aero Profile</a>
+                <span class="meta">Hand-drawn Scan (Portland)</span>
+            </section>
+
+            <section>
+                <h2>Mobility Strategy</h2>
+                <a href="#" class="content-link">30-Day Transition Notice</a>
+                <span class="meta">Status: Formulating Exit</span>
+                <a href="#" class="content-link">Calculated Homelessness PDF</a>
+                <span class="meta">Logistics for the Tri-State Pulse</span>
+            </section>
+        </div>
+
+        <footer>
+            &copy; 2026 Bill Tonnesen | Built with WallyCAD | Travel Light. Travel Smart.
+        </footer>
+    </main>
+
+</body>
+</html>
