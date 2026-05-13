@@ -122,10 +122,9 @@
         <div class="stats" id="statsDisplay">SYSTEM READY</div>
     </div>
 
-    <script>
+<script>
         // =========================================================================
-        // 1. PASTE YOUR PDF TEXT HERE
-        // Just paste the raw list of repositories or URLs between the backticks.
+        // 1. DATA: Each repo MUST be on a new line to be parsed correctly
         // =========================================================================
         const rawPDFText = `
 ARMike-2
@@ -208,10 +207,9 @@ web
 white
 wib
 wib2
-wib3
-        `;
+wib3`;
 
-        // Default GitHub username to append if a line is just a repo name (not a full URL)
+        // Your specific GitHub path
         const defaultGitHubUser = "https://github.com/btlsp2000/wally-v1/"; 
 
         // =========================================================================
@@ -222,39 +220,40 @@ wib3
         let linkElements = [];
 
         function buildDirectory() {
-            // Split raw text into lines and clean up whitespace
-            const lines = rawPDFText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+            // Clear existing list if any
+            directoryList.innerHTML = '';
+            linkElements = [];
+
+            // Split into lines, trim spaces, and remove empty lines
+            const lines = rawPDFText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
             
             lines.forEach(line => {
-                let url = line;
+                let url;
                 let displayName = line;
 
-                // Check if the line is already a full URL
                 if (line.toLowerCase().startsWith('http')) {
-                    // Extract just the repo name from the end of the URL for display
+                    url = line;
                     const parts = line.split('/');
                     displayName = parts[parts.length - 1] || parts[parts.length - 2]; 
                 } else {
-                    // If it's just a name, build the full GitHub URL
-                    url = \`https://github.com/\${defaultGitHubUser}/\${line}\`;
+                    // Append the repo name to your base GitHub URL
+                    url = `${defaultGitHubUser}${line}`;
                 }
 
-                // Create the DOM elements
                 const a = document.createElement('a');
                 a.href = url;
-                a.target = "_blank"; // Open in new tab
+                a.target = "_blank";
                 a.className = "repo-link";
-                
-                a.innerHTML = \`
-                    <span class="repo-name">\${displayName}</span>
-                    <span class="repo-url">\${url}</span>
-                \`;
+                a.innerHTML = `
+                    <span class="repo-name">${displayName}</span>
+                    <span class="repo-url">${url}</span>
+                `;
 
                 directoryList.appendChild(a);
                 linkElements.push({ element: a, text: displayName.toLowerCase() });
             });
 
-            document.getElementById('statsDisplay').innerText = \`INDEXED: \${linkElements.length} REPOSITORIES\`;
+            document.getElementById('statsDisplay').innerText = `INDEXED: ${linkElements.length} REPOSITORIES`;
         }
 
         // =========================================================================
@@ -273,10 +272,10 @@ wib3
                 }
             });
 
-            document.getElementById('statsDisplay').innerText = \`SHOWING: \${visibleCount} / \${linkElements.length} REPOSITORIES\`;
+            document.getElementById('statsDisplay').innerText = `SHOWING: ${visibleCount} / ${linkElements.length} REPOSITORIES`;
         });
 
-        // Initialize
+        // Initialize the build
         buildDirectory();
     </script>
 </body>
