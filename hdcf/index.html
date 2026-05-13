@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUICK HDC Form</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --border-color: #333;
+            --text-color: #00ff41; /* Terminal Green for HDC/WallyCAD context */
+            --input-bg: #1e1e1e;
+            --accent: #ff9900; /* Vector Orange for Hand-written indicator */
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .hdc-form-container {
+            width: 400px;
+            border: 2px solid var(--text-color);
+            padding: 20px;
+            background-color: var(--input-bg);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            text-decoration: underline;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        label {
+            display: block;
+            padding: 5px 10px;
+            background-color: var(--border-color);
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .content-area {
+            min-height: 200px;
+            border-top: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        /* The 'X' background to match the sketch in 1000005847.jpg */
+        .content-area::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(to top right, transparent 49.5%, var(--border-color) 49.5%, var(--border-color) 50.5%, transparent 50.5%),
+                linear-gradient(to top left, transparent 49.5%, var(--border-color) 49.5%, var(--border-color) 50.5%, transparent 50.5%);
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .vector-footer {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        .arrow-up {
+            width: 0; 
+            height: 0; 
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid var(--accent);
+            margin-right: 10px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: var(--text-color);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: #00cc33;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hdc-form-container">
+        <div class="header">QUICK HDC</div>
+        
+        <div class="form-group">
+            <label>Subject:</label>
+            <input type="text" placeholder="Enter Category...">
+        </div>
+
+        <div class="form-group content-area">
+            <label>Content:</label>
+            <textarea placeholder="Input archival data..."></textarea>
+        </div>
+
+        <div class="vector-footer">
+            <div class="arrow-up"></div>
+            <span>HANDWRITTEN VECTOR ACTIVE</span>
+        </div>
+
+        <button type="button">Digitize to HDC</button>
+    </div>
+
+</body>
+</html>
