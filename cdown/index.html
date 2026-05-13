@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDC Extraction Portal</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1a1a1a;
+            color: #00ff41;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #countdown-container {
+            border: 2px solid #00ff41;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 15px #00ff41;
+        }
+        .label {
+            font-size: 1.2em;
+            text-decoration: underline;
+            margin-bottom: 15px;
+        }
+        #timer {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .status {
+            margin-top: 10px;
+            color: #ff9900;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="countdown-container">
+        <div class="label">EXTRACTION COUNTDOWN</div>
+        <div id="timer">--d --h --m --s</div>
+        <div id="status-update" class="status">PHASE: ACTIVE EXTRACTION (RM 113)</div>
+    </div>
+
+    <script>
+        function updateCountdown() {
+            const deadline = new Date('June 1, 2026 00:00:00').getTime();
+            const now = new Date().getTime();
+            const distance = deadline - now;
+
+            if (distance < 0) {
+                document.getElementById("timer").innerHTML = "00:00:00";
+                document.getElementById("status-update").innerHTML = "ROOM 113 DECOMMISSIONED";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("timer").innerHTML = 
+                `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+            // Logic for Phase Changes based on your whiteboard timeline
+            if (days <= 5) {
+                document.getElementById("status-update").innerHTML = "PHASE: FINAL HANDOVER / RENT DUE";
+                document.getElementById("status-update").style.color = "#ff4d4d";
+            }
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+</body>
+</html>
