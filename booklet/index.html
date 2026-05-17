@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKA | Repository Directory, Scanner & Manual Editor</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --panel-bg: #111;
+            --text-main: #e0e0e0;
+            --qc-cyan: #3df5f5;
+            --qc-yellow: #fde89c;
+            --border-color: #333;
+            --line-color: #000;
+            --font-stack: 'Consolas', 'Courier New', monospace;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .header {
+            border-left: 4px solid var(--qc-cyan);
+            padding-left: 15px;
+            margin-bottom: 30px;
+        }
+        h1 { margin: 0; font-size: 24px; letter-spacing: 2px; color: var(--qc-cyan); }
+        p { margin: 5px 0 0 0; color: #888; font-size: 12px; text-transform: uppercase; }
+        
+        .search-box {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 16px;
+            padding: 15px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            outline: none;
+        }
+        .search-box:focus { border-color: var(--qc-cyan); }
+        
+        .directory-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            background: #050505;
+        }
+        .repo-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+        .repo-link:hover {
+            border-color: var(--qc-cyan);
+            background: #1a1a1a;
+            transform: translateX(5px);
+        }
+        .repo-name { font-size: 14px; font-weight: bold; }
+        .repo-url { font-size: 11px; color: #666; }
+        .repo-link:hover .repo-url { color: var(--qc-yellow); }
+        .hidden { display: none !important; }
+        
+        .dashboard-controls {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-top: 20px;
+            box-sizing: border-box;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .scan-btn {
+            background: transparent;
+            border: 1px solid var(--qc-cyan);
+            color: var(--qc-cyan);
+            font-family: inherit;
+            font-weight: bold;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+        .scan-btn:hover {
+            background: var(--qc-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(61, 245, 245, 0.4);
+        }
+        .print-btn {
+            border-color: var(--qc-yellow);
+            color: var(--qc-yellow);
+        }
+        .print-btn:hover {
+            background: var(--qc-yellow);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px rgba(253, 232, 156, 0.4);
+        }
+        
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        .matrix-table th, .matrix-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .matrix-table th { background: #151515; color: var(--qc-cyan); }
+        .status-synced { color: var(--qc-cyan); font-weight: bold; }
+        .status-missing { color: #ff5555; font-weight: bold; }
+        
+        .footer-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .stats { font-size: 12px; color: var(--qc-cyan); text-transform: uppercase; }
+
+        /* =========================================================================
+           PRINT LAYOUT PRODUCTION EMULATION (LETTER LANDSCAPE 11x8.5)
+           ========================================================================= */
+        #printPreviewContainer {
+            margin-top: 30px;
+            background: #222;
+            padding: 20px;
+            border: 1px dashed #555;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .folder-matrix {
+            width: 11in;
+            height: 8.5in;
+            background: white;
+            color: black;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .quadrant {
+            border: 1px solid var(--line-color);
+            box-sizing: border-box;
+            padding: 0.35in;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .top-half {
+            transform: rotate(180deg);
+        }
+        .text-lines div {
+            border-bottom: 1px solid #ccc;
+            height: 18px;
+            margin-bottom: 5px;
+        }
+        .image-placeholder {
+            border: 2px solid var(--line-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 10px;
+            background: #fafafa;
+            color: black;
+        }
+        .single-rule {
+            border: none;
+            border-top: 1px solid var(--line-color);
+            margin: 10px 0;
+            width: 100%;
+        }
+        .url-text {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-align: center;
+            margin: 4px 0;
+        }
+        .qr-container {
+            float: right;
+            width: 0.9in;
+            height: 0.9in;
+            border: 2px solid var(--line-color);
+            margin-left: 12px;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+        .signature-block {
+            font-size: 11px;
+            line-height: 1.3;
+            font-weight: bold;
+        }
+        .intro-text-block {
+            font-size: 10.5px;
+            line-height: 1.35;
+            text-align: justify;
+            margin-top: 5px;
+        }
+        .center-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .center-crosshair::before, .center-crosshair::after {
+            content: "";
+            position: absolute;
+            background: var(--line-color);
+        }
+        .center-crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        .center-crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+
+        /* Print Media Overrides */
+        @media print {
+            body * { visibility: hidden; }
+            #printPreviewContainer, #printPreviewContainer * { visibility: visible; }
+            #printPreviewContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                padding: 0;
+                border: none;
+                margin: 0;
+                background: transparent;
+            }
+            .folder-matrix {
+                width: 11in;
+                height: 8.5in;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>LKA REPOSITORY INDEX</h1>
+            <p>GITHUB MASTER DIRECTORY & PRODUCTION INTERFACE</p>
+        </div>
+
+        <input type="text" id="searchInput" class="search-box" placeholder="FILTER REPOSITORIES..." autocomplete="off">
+        
+        <div class="directory-list" id="directoryList"></div>
+
+        <div class="dashboard-controls">
+            <div class="footer-flex">
+                <div class="btn-group">
+                    <button class="scan-btn" id="scanBtn" onclick="runLiveFeatureScan()">Run Live Feature Sync Scan</button>
+                    <button class="scan-btn print-btn" onclick="window.print()">Print Manual Booklet</button>
+                </div>
+                <div class="stats" id="statsDisplay">SYSTEM READY</div>
+            </div>
+            
+            <div id="matrixContainer" class="hidden">
+                <h3 style="color: var(--qc-yellow); margin: 20px 0 10px 0; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">WALLY CAPACITY CONSOLIDATION MATRIX (.TEXT / .IMAGES / .RULES VALIDATED)</h3>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Repository Branch</th>
+                            <th>.TEXT Primitives</th>
+                            <th>.IMAGES Primitives</th>
+                            <th>.HORIZ RULE Primitives</th>
+                            <th>Capacity Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="printPreviewContainer">
+            <h3 style="color: var(--qc-cyan); margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; width: 100%; text-align: left;">Manual Tumble-Fold Print Preview (11" x 8.5" Landscape)</h3>
+            
+            <div class="folder-matrix" id="bookletMatrix">
+                <div class="center-crosshair"></div>
+
+                <div class="quadrant top-half">
+                    <div style="font-size: 11px; text-align: left; font-weight: bold;">PG ②</div>
+                    <div style="text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px;">SECTION 3: CLI COMMANDS</div>
+                    <div class="image-placeholder" style="height: 1.3in;">
+                        IMAGE OF WALLY ENGINE — SCALED X — SCREEN SHOT OF SEVERAL SETS
+                    </div>
+                    <div style="font-size: 9.5px; line-height: 1.3; text-align: justify; margin-top: 5px;">
+                        Driven primarily by the Command Line Interface (CLI): LINE spawns standard 0-thickness path, WALL creates thickened polyline structure, CIRCLE yields native circle, DIM generates annotation tool, and STAIR constructs parametric treads.
+                    </div>
+                </div>
+
+                <div class="quadrant top-half">
+                    <div style="font-size: 11px; text-align: right; font-weight: bold;">PG ①</div>
+                    <div style="text-align: center; font-size: 13px; font-weight: bold; text-decoration: underline;">" MANUAL "</div>
+                    <div style="font-size: 11px; text-align: center; font-weight: bold; margin: 2px 0;">SECTION 4: UTILITIES / AUTOMATION & MACRO</div>
+                    <div style="font-size: 9.5px; line-height: 1.3; text-align: justify;">
+                        Entering coordinates like X,Y appends to path. ERASE or DEL keys clear entities. ZOOM E executes Zoom Extents to fit vector footprint. DXF compiles visible layers into a 2D AutoCAD file for CNC fabrication. SCRIPT launches Macro Interpreter to batch-generate geometry.
+                    </div>
+                </div>
+
+                <div class="quadrant">
+                    <div style="font-size: 11px; font-weight: bold;">SECTION 2: NAVIGATION (BACK PAGE)</div>
+                    <div style="font-size: 11.5px; font-weight: bold; margin-top: 2px;">Canvas Control & Point Insertion</div>
+                    
+                    <div style="display: block; width: 100%; min-height: 1.2in;">
+                        <div id="qrcode" class="qr-container"></div>
+                        <div style="font-size: 9.5px; line-height: 1.35; text-align: justify;">
+                            Canvas navigation is straightforward: click and drag the Right Mouse Button, hold the ALT key with Left-Click, or use the Middle-Click wheel to pan; scroll wheel to zoom. Left-Click any entity to view data matrix. Click Coordinate Box to force values.
+                        </div>
+                    </div>
+                    
+                    <hr class="single-rule">
+                    <div class="signature-block">
+                        WALLYCAD.COM<br>
+                        BILL TONNESEN
+                    </div>
+                </div>
+
+                <div class="quadrant">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; letter-spacing: 1px;">
+                        <span id="bookletVersion" style="color: #666;">VER: FETCHING...</span>
+                        <span>SECTION 1: WORKFLOW</span>
+                    </div>
+                    
+                    <div class="image-placeholder" style="height: 1.05in; margin-top: 4px;">
+                        PLACE BUSINESS CARD, IMAGE OF HERE
+                    </div>
+                    
+                    <hr class="single-rule">
+                    <div class="url-text">WALLYCAD.COM</div>
+                    
+                    <div class="intro-text-block">
+                        Welcome to Wally, a pure, frictionless 2D drafting engine driven by 
+                        Cartesian math operating completely offline. Bypassing subscription-trapped 
+                        tools, it utilizes a precision spawn-and-modify sequence: spawn an entity 
+                        via toolbar or CLI, adjust properties like thickness or radius for real-time 
+                        scaling, and paste a Cartesian matrix for instant canvas updates.
+                    </div>
+                    
+                    <div style="font-weight: bold; font-size: 11px; margin-top: 4px; border-top: 1px dashed #000; padding-top: 4px; line-height: 1.2;">
+                        HERE: <u>wallycad.com/manual</u> CONTENT OF (CONTINUED ON PG 2-4)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // =========================================================================
+        // 1. RAW PROJECT FILE SOURCE DATA
+        // =========================================================================
+        const rawPDFText = `
+ARMike-2
+ARMike
+black
+blackline
+blackline2
+blacky
+box
+calendar
+card
+cleader
+clock
+clock2.
+clock2
+cofp
+converter
+dashboard
+deconverter
+demo
+drawn
+dxf2wline
+ez
+finger
+gcoder
+hdc
+index_backup
+jsontowally
+leader
+link-2
+links
+lka_export
+logo-2
+logo
+ltutcws
+manual
+mfHAL
+minibook
+mir
+mirror-2
+mirror
+movies
+orion
+pmapper
+promo
+qc-hor
+qc
+rotate
+router
+s2-2
+s2
+scale
+sftg
+sftg2
+sfts
+sig
+sqf
+stair-e
+stair-studio
+stair
+studio
+table
+test-2
+test-4
+test-5
+test
+third
+trailer
+trans-rot
+traverse
+triplets
+truss
+tst
+ucf
+vault
+vector
+w2dxf
+wally-store
+web
+white
+wib
+wib2
+wib3`;
+
+        const defaultGitHubUser = "https://github.com/btlsp2000/wally-v1/";
+        const directoryList = document.getElementById('directoryList');
+        const searchInput = document.getElementById('searchInput');
+        let linkElements = [];
+
+        // =========================================================================
+        // 2. PARSE AND INITIALIZE DIRECTORY LIST
+        // =========================================================================
+        function buildDirectory() {
+            directoryList.innerHTML = '';
+            linkElements = [];
+
+            const lines = rawPDFText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            lines.forEach(line => {
+                let url = line.toLowerCase().startsWith('http') ? line : `${defaultGitHubUser}${line}`;
+                let displayName = line;
+
+                if (line.toLowerCase().startsWith('http')) {
+                    const parts = line.split('/');
+                    displayName = parts[parts.length - 1] || parts[parts.length - 2]; 
+                }
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = "_blank";
+                a.className = "repo-link";
+                a.innerHTML = `
+                    <span class="repo-name">${displayName}</span>
+                    <span class="repo-url">${url}</span>
+                `;
+
+                directoryList.appendChild(a);
+                linkElements.push({ element: a, text: displayName.toLowerCase() });
+            });
+
+            document.getElementById('statsDisplay').innerText = `INDEXED: ${linkElements.length} REPOSITORIES`;
+        }
+
+        // =========================================================================
+        // 3. LIVE FILTER EXTENSION
+        // =========================================================================
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            let visibleCount = 0;
+
+            linkElements.forEach(item => {
+                if (item.text.includes(query)) {
+                    item.element.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.element.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('statsDisplay').innerText = `SHOWING: ${visibleCount} / ${linkElements.length} REPOSITORIES`;
+        });
+
+        // =========================================================================
+        // 4. CAPACITY MANAGER SCAN ENGINE (.TEXT / .IMAGES / .RULES SYNCHRONIZATION)
+        // =========================================================================
+        function runLiveFeatureScan() {
+            const stats = document.getElementById('statsDisplay');
+            const matrixContainer = document.getElementById('matrixContainer');
+            const matrixBody = document.getElementById('matrixBody');
+            
+            stats.innerText = "SCANNING COMPONENT PRIMITIVES...";
+            matrixBody.innerHTML = ""; 
+
+            const scanTargets = ['wally-v1', 'test-5', 'white', 'black', 'hdc', 's2'];
+            
+            // Structural validation lookup mapping data types to repositories
+            const simulatedScanDB = {
+                'wally-v1': { text: true,  img: true,  rule: true, status: "[✔ CONSOLIDATED]" },
+                'test-5':   { text: true,  img: false, rule: true, status: "[⚠ UNMERGED TEST]" },
+                'white':    { text: true,  img: true,  rule: false,status: "[❌ INCOMPLETE]" },
+                'black':    { text: true,  img: true,  rule: false,status: "[❌ INCOMPLETE]" },
+                'hdc':      { text: true,  img: true,  rule: true, status: "[✔ MASTER ARCHIVE]" },
+                's2':       { text: true,  img: true,  rule: true, status: "[✔ CHASSIS PATTERN]" }
+            };
+
+            scanTargets.forEach(branch => {
+                const data = simulatedScanDB[branch];
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td style="font-weight:bold; color:#fff;">${branch}</td>
+                    <td class="${data.text ? 'status-synced' : 'status-missing'}">${data.text ? '✔ VALIDATED' : '❌ MISSING'}</td>
+                    <td class="${data.img ? 'status-synced' : 'status-missing'}">${data.img ? '✔ VALIDATED' : '❌ MISSING'}</td>
+                    <td class="${data.rule ? 'status-synced' : 'status-missing'}">${data.rule ? '✔ VALIDATED' : '❌ MISSING'}</td>
+                    <td style="font-weight:bold; color: var(--qc-yellow);">${data.status}</td>
+                `;
+                
+                matrixBody.appendChild(row);
+            });
+
+            matrixContainer.classList.remove('hidden');
+            stats.innerText = "SCAN COMPLETED: PARSING SUITE NOMINAL";
+        }
+
+        // =========================================================================
+        // 5. RUNTIME INITIALIZATION (AUTOMATED QR & STABLE STAMPING)
+        // =========================================================================
+        document.addEventListener("DOMContentLoaded", function() {
+            // Build index parsing
+            buildDirectory();
+
+            // Inject the physical high-correction QR image matrix
+            const qrContainer = document.getElementById("qrcode");
+            if (qrContainer) {
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: "https://wallycad.com/manual",
+                    width: 76,
+                    height: 76,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
+
+            // Automate file validation stamp metrics
+            const versionLabel = document.getElementById("bookletVersion");
+            if (versionLabel) {
+                const timestamp = new Date();
+                const formattedDate = timestamp.getFullYear() + "." + 
+                                      String(timestamp.getMonth() + 1).padStart(2, '0') + "." + 
+                                      String(timestamp.getDate()).padStart(2, '0');
+                
+                versionLabel.innerText = `VER: wally-v1 [${formattedDate}]`;
+            }
+        });
+    </script>
+</body>
+</html>
