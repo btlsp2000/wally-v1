@@ -23,7 +23,6 @@
             align-items: center;
             height: 100vh;
         }
-        /* Locked to standard 11x8.5 Letter landscape dimensions */
         .folder-matrix {
             width: 11in;
             height: 8.5in;
@@ -45,7 +44,6 @@
             position: relative;
             overflow: hidden;
         }
-        /* Top Half inversion for tumble-folding alignment */
         .top-half {
             transform: rotate(180deg);
         }
@@ -65,6 +63,60 @@
             background: #fafafa;
             color: black;
         }
+        
+        /* High Fidelity Embedded Dark Business Card Styling */
+        .dark-biz-card {
+            background: #111;
+            color: #fff;
+            border: 1px solid #000;
+            height: 1.33in;
+            width: 2.0in;
+            margin: 0 auto;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: var(--font-stack);
+        }
+        .card-top {
+            font-size: 9px;
+            color: #888;
+            letter-spacing: 0.5px;
+        }
+        .card-mid {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            margin-top: 5px;
+        }
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 5px;
+        }
+        .card-name {
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .card-qr-box {
+            width: 28px;
+            height: 28px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-mini-logo {
+            border: 1px solid #fff;
+            padding: 1px 3px;
+            font-size: 8px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
         .single-rule {
             border: none;
             border-top: 1px solid var(--line-color);
@@ -101,7 +153,6 @@
             text-align: justify;
             margin-top: 5px;
         }
-        /* Precision 0.5-inch folding crosshair intersection guide */
         .center-crosshair {
             position: absolute;
             top: 50%;
@@ -120,7 +171,6 @@
         .center-crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
         .center-crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
 
-        /* Print execution styling overrides */
         @media print {
             body { background: white; }
             .folder-matrix {
@@ -180,8 +230,18 @@
                 <span>SECTION 1: WORKFLOW</span>
             </div>
             
-            <div class="image-placeholder" style="height: 1.05in; margin-top: 4px;">
-                PLACE BUSINESS CARD, IMAGE OF HERE
+            <div class="dark-biz-card">
+                <div class="card-top">bttsp2013@gmail.com</div>
+                <div class="card-mid">wallycad.com</div>
+                <div class="card-bottom">
+                    <div class="card-mini-logo">W</div>
+                    <div class="card-name">BILL TONNESEN</div>
+                    <div class="card-qr-box">
+                        <svg width="22" height="22" viewBox="0 0 29 29" style="shape-rendering:crispedges;">
+                            <path fill="#000" d="M0 0h7v7H0zm22 0h7v7h-7zM0 22h7v7H0zm9-13h2v2H9zm4 4h2v2h-2zm4 4h2v2h-2zm-4-4h2v2h-2zm6-4h4v2h-4z"/>
+                        </svg>
+                    </div>
+                </div>
             </div>
             
             <hr class="single-rule">
@@ -204,7 +264,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Build and embed high-correction standalone QR graphic vector
             const qrContainer = document.getElementById("qrcode");
             if (qrContainer) {
                 qrContainer.innerHTML = "";
@@ -218,7 +277,6 @@
                 });
             }
 
-            // 2. Automate chronological version trace injection onto layout cover
             const versionLabel = document.getElementById("bookletVersion");
             if (versionLabel) {
                 const timestamp = new Date();
@@ -229,7 +287,6 @@
                 versionLabel.innerText = `VER: wally-v1 [${formattedDate}]`;
             }
             
-            // 3. Immediately call system print execution loop
             window.print();
         });
     </script>
