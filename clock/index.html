@@ -1,138 +1,255 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="https://btlsp2000.tripod.com/b/clock.png">
-    <title>Sandra's Products | Workspace</title>
+    <title>WIB Gameboard | 16x32 Grid Matrix</title>
     <style>
         :root {
-            --brand-mint: #C8F7C5;
-            --brand-orange: #E67E22;
-            --brand-green: #27AE60;
-            --bg-color: #FCF3CF;
-            --sidebar-bg: #D5DBDB;
-            --text-color: #333;
+            --matrix-purple: #4a154b;
+            --matrix-dark: #1a051d;
+            --matrix-glow: #bc13fe;
+            --drafting-blue: #0056b3;
+            --panel-bg: #ffffff;
         }
 
-        [data-theme="dark"] {
-            --bg-color: #2c3e50;
-            --sidebar-bg: #1a252f;
-            --text-color: #ecf0f1;
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; min-height: 100vh; }
+        /* SIDEBAR - CONTROLS & COMPASS */
+        aside {
+            width: 320px;
+            background-color: #e9ecef;
+            border-right: 2px solid #ccc;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
 
-        #sidebar { width: 350px; background-color: var(--sidebar-bg); border-right: 2px solid black; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .sidebar-title { font-weight: bold; font-size: 0.85rem; color: var(--brand-green); border-bottom: 1px solid #555; padding-bottom: 2px; }
-        
-        /* Tool Modules */
-        #logic-explorer { background: #1e1e1e; color: #00ff00; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.75rem; }
-        .logic-input { width: 100%; background: #333; color: #fff; border: 1px solid #555; font-size: 0.7rem; padding: 3px; margin-bottom: 3px; }
+        .panel-section {
+            background: var(--panel-bg);
+            padding: 15px;
+            border: 1px solid #bbb;
+            box-shadow: 3px 3px 0px #ccc;
+            margin-bottom: 15px;
+        }
 
-        #project-notes { width: 100%; height: 100px; background: #fffde7; border: 1px solid #ccc; font-family: 'Segoe UI', sans-serif; font-size: 0.8rem; padding: 5px; resize: none; border-radius: 4px; }
+        .panel-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            color: var(--matrix-purple);
+        }
 
-        #qc-display { width: 100%; height: 40px; background: #fff; color: #000; border: 1px solid #333; padding: 3px; font-family: monospace; font-size: 0.8rem; overflow-y: auto; }
-        #quick-click-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
-        .qc-btn { background: rgba(255, 255, 255, 0.6); border: 1px solid #444; font-size: 0.65rem; padding: 4px 0; text-align: center; border-radius: 3px; cursor: pointer; }
+        /* NORTH VECTOR COMPASS */
+        .compass-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .north-vector {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--matrix-purple);
+            animation: pulse 2s infinite;
+        }
+        .arrow-up {
+            width: 0; 
+            height: 0; 
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 15px solid var(--matrix-purple);
+            margin-bottom: 5px;
+        }
 
-        #content-wrapper { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .btn-ui { padding: 8px 16px; border-radius: 50px; border: 2px solid #555; background: #f9e79f; cursor: pointer; font-weight: bold; }
+        /* MATRIX INTERACTION LEGENDBOX */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            margin-right: 10px;
+            border: 1px solid #333;
+        }
+
+        /* MAIN GAMEBOARD DECK */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--matrix-dark);
+            position: relative;
+        }
+
+        .gameboard-container {
+            height: 85vh;
+            aspect-ratio: 16 / 32;
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            grid-template-rows: repeat(32, 1fr);
+            gap: 2px;
+            background-color: #2a0830;
+            padding: 4px;
+            border: 3px double var(--matrix-glow);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
+        }
+
+        .matrix-cell {
+            background-color: rgba(74, 21, 75, 0.3);
+            border: 1px solid rgba(188, 19, 254, 0.2);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .matrix-cell:hover {
+            background-color: rgba(188, 19, 254, 0.5);
+            box-shadow: 0 0 8px var(--matrix-glow);
+        }
+
+        /* CELL STATES */
+        .matrix-cell.occupied {
+            background-color: var(--matrix-glow);
+            border-color: #fff;
+            box-shadow: 0 0 10px var(--matrix-glow);
+        }
+
+        .matrix-cell.scouted {
+            background-color: #0056b3;
+            border-color: #00ecff;
+        }
+
+        /* COORDINATE LABELS */
+        .matrix-cell::after {
+            content: attr(data-coord);
+            position: absolute;
+            font-size: 0.45rem;
+            color: rgba(255, 255, 255, 0.4);
+            bottom: 1px;
+            right: 1px;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
     </style>
 </head>
-<body id="bodyTag">
+<body>
 
-<div id="sidebar">
-    <div class="sidebar-title">PRIORITY: JOB PURSUIT</div>
-    <div style="background: rgba(39, 174, 96, 0.1); padding: 8px; border-radius: 6px; font-size: 0.75rem;">
-        <a href="https://btlsp2000.com/resume" target="_blank" style="display:block; background:var(--brand-green); color:white; text-align:center; padding:4px; border-radius:4px; text-decoration:none; margin-bottom:5px;">&#128196; SHARE RESUME</a>
-        <strong>Role:</strong> Remote Drafting Specialist
-    </div>
+    <aside>
+        <div>
+            <div class="panel-section">
+                <div class="panel-title">Orientation</div>
+                <div class="compass-container">
+                    <div class="arrow-up"></div>
+                    <div class="north-vector">▲ N</div>
+                    <span style="font-size:0.7rem; color:#666; margin-top:5px;">OR / PNW Sector</span>
+                </div>
+            </div>
 
-    <div class="sidebar-title">VECTOR LOGIC EXPLORER</div>
-    <div id="logic-explorer">
-        <div>Coord Path (x,y):</div>
-        <input type="text" id="coordInput" class="logic-input" placeholder="0,0 12,5" oninput="runLogic()">
-        <div id="logic-output">> Output: Awaiting Data...</div>
-    </div>
+            <div class="panel-section">
+                <div class="panel-title">WIB Matrix Specs</div>
+                <table style="width:100%; font-size:0.75rem; border-collapse:collapse;">
+                    <tr><td style="font-weight:bold;">X-Axis width:</td><td style="text-align:right;">16 Units (Time/Stints)</td></tr>
+                    <tr><td style="font-weight:bold;">Y-Axis height:</td><td style="text-align:right;">32 Units (Latitudes)</td></tr>
+                    <tr><td style="font-weight:bold;">Total Nodes:</td><td style="text-align:right;">512 Coordinates</td></tr>
+                </table>
+            </div>
 
-    <div class="sidebar-title">PROJECT NOTES (AUTO-SAVE)</div>
-    <textarea id="project-notes" placeholder="Save vector results or drafting notes here..." oninput="saveNotes()"></textarea>
+            <div class="panel-section">
+                <div class="panel-title">Legend Modifiers</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--matrix-glow);"></div>
+                    <span>Active Deployment Node</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--drafting-blue);"></div>
+                    <span>Scouted Supply/Work Node</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(74, 21, 75, 0.3);"></div>
+                    <span>Unoccupied Clear Terrain</span>
+                </div>
+            </div>
+        </div>
 
-    <div class="sidebar-title">QUICKCLICK (QC) INPUT</div>
-    <div id="qc-display"></div>
-    <div id="quick-click-grid">
-        <div class="qc-btn" onclick="qcIn('E')">E</div><div class="qc-btn" onclick="qcIn('T')">T</div><div class="qc-btn" onclick="qcIn('A')">A</div><div class="qc-btn" onclick="qcIn('O')">O</div><div class="qc-btn" onclick="qcIn('I')">I</div>
-        <div class="qc-btn" style="grid-column: span 2;" onclick="qcIn(' ')">SPACE</div>
-        <div class="qc-btn" onclick="qcCopy()">COPY</div><div class="qc-btn" onclick="qcClear()">CLR</div>
-    </div>
-</div>
+        <div class="panel-section" style="margin-bottom:0;">
+            <div class="panel-title">Current Coordinates</div>
+            <div id="coord-readout" style="font-size:1.1rem; font-weight:bold; text-align:center; color:var(--drafting-blue);">
+                X:-- Y:--
+            </div>
+            <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0; text-align:center;">
+                Click grid intersections to plot rotation paths.
+            </p>
+        </div>
+    </aside>
 
-<div id="content-wrapper">
-    <div id="nav-header" style="margin-bottom: 15px;">
-        <button class="btn-ui" onclick="toggleTheme()">&#127763; Theme</button>
-        <button class="btn-ui" style="background:var(--brand-orange); color:white;" onclick="window.print()">&#127919; Focus Mode</button>
-    </div>
+    <main>
+        <div class="gameboard-container" id="matrix-board">
+            </div>
+    </main>
 
-    <div id="clock-section" style="display:flex; flex-direction:column; align-items:center;">
-        <canvas id="clockCanvas" width="140" height="140"></canvas>
-        <div id="digital-clock" style="font-size:1.2rem; font-family:monospace; font-weight:bold;">00:00:00 AM</div>
-    </div>
+    <script>
+        const board = document.getElementById('matrix-board');
+        const readout = document.getElementById('coord-readout');
 
-    <div id="calendar-section" style="margin-top: 10px;">
-        <iframe src="https://calendar.google.com/calendar/embed?src=btlsp2013%40gmail.com&ctz=America%2FLos_Angeles&color=%2327AE60" width="300" height="240" frameborder="0" scrolling="no"></iframe>
-    </div>
-</div>
+        // Build 16x32 Matrix (32 rows down, 16 cols across)
+        // Y-axis 32 down to 1 (North at top means highest Y value on top row)
+        for (let y = 32; y >= 1; y--) {
+            for (let x = 1; x <= 16; x++) {
+                const cell = document.createElement('div');
+                cell.classList.add('matrix-cell');
+                
+                // Format matching engineering coordinates: X01-Y32
+                const xStr = x.toString().padStart(2, '0');
+                const yStr = y.toString().padStart(2, '0');
+                cell.setAttribute('data-coord', `${xStr},${yStr}`);
+                cell.setAttribute('data-x', xStr);
+                cell.setAttribute('data-y', yStr);
 
-<script>
-    // Project Notes Auto-Save Logic
-    const notesArea = document.getElementById('project-notes');
-    notesArea.value = localStorage.getItem('projectNotes') || '';
-    function saveNotes() { localStorage.setItem('projectNotes', notesArea.value); }
+                // Tracking Hover States
+                cell.addEventListener('mouseenter', () => {
+                    readout.innerText = `X:${xStr} | Y:${yStr}`;
+                });
 
-    // Logic Explorer Simulation
-    function runLogic() {
-        const input = document.getElementById('coordInput').value;
-        const output = document.getElementById('logic-output');
-        if (input.includes(' ')) {
-            const pts = input.split(' ').map(p => p.split(',').map(Number));
-            if (pts.length >= 2 && !isNaN(pts[1][0])) {
-                const dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1];
-                const mag = Math.sqrt(dx**2 + dy**2);
-                const nx = (-dy/mag).toFixed(3), ny = (dx/mag).toFixed(3);
-                output.innerHTML = `> Normal: (${nx}, ${ny})<br>> Mag: ${mag.toFixed(2)}`;
-                return;
+                // Interaction: Left click switches states (Clear -> Occupied -> Scouted -> Clear)
+                cell.addEventListener('click', () => {
+                    if (!cell.classList.contains('occupied') && !cell.classList.contains('scouted')) {
+                        cell.classList.add('occupied');
+                    } else if (cell.classList.contains('occupied')) {
+                        cell.classList.remove('occupied');
+                        cell.classList.add('scouted');
+                    } else {
+                        cell.classList.remove('scouted');
+                    }
+                });
+
+                board.appendChild(cell);
             }
         }
-        output.innerText = "> Output: Awaiting Data...";
-    }
-
-    // Standard QuickClick & Dashboard logic
-    const display = document.getElementById('qc-display');
-    function qcIn(char) { display.innerText += char; }
-    function qcClear() { display.innerText = ''; }
-    function qcCopy() { navigator.clipboard.writeText(display.innerText); }
-
-    function toggleTheme() { document.body.getAttribute("data-theme") === "dark" ? document.body.removeAttribute("data-theme") : document.body.setAttribute("data-theme", "dark"); updateClocks(); }
-    const canvas = document.getElementById("clockCanvas"), ctx = canvas.getContext("2d");
-    let radius = canvas.height / 2; ctx.translate(radius, radius); radius = radius * 0.90;
-    function updateClocks() {
-        const now = new Date(), textColor = document.body.getAttribute("data-theme") === "dark" ? "white" : "black";
-        ctx.clearRect(-radius-20, -radius-20, canvas.width+40, canvas.height+40);
-        ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2*Math.PI);
-        ctx.fillStyle = "white"; ctx.fill(); ctx.strokeStyle = textColor; ctx.lineWidth = 4; ctx.stroke();
-        drawNumbers(ctx, radius, "black");
-        let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
-        drawHand(ctx, (h%12 * Math.PI/6) + (m*Math.PI/360), radius*0.5, 6, "black");
-        drawHand(ctx, (m*Math.PI/30), radius*0.8, 4, "black");
-        drawHand(ctx, (s*Math.PI/30), radius*0.9, 2, "orange");
-        document.getElementById("digital-clock").innerHTML = `${h%12||12}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} ${h>=12?'PM':'AM'}`;
-    }
-    function drawNumbers(ctx, r, c) { ctx.font = r*0.12+"px arial"; ctx.fillStyle = c; ctx.textAlign="center"; ctx.textBaseline="middle"; for(let n=1; n<13; n++) { let ang = n * Math.PI/6; ctx.rotate(ang); ctx.translate(0, -r*0.85); ctx.rotate(-ang); ctx.fillText(n.toString(), 0, 0); ctx.rotate(ang); ctx.translate(0, r*0.85); ctx.rotate(-ang); } }
-    function drawHand(ctx, p, l, w, c) { ctx.beginPath(); ctx.lineWidth = w; ctx.lineCap = "round"; ctx.strokeStyle = c; ctx.moveTo(0,0); ctx.rotate(p); ctx.lineTo(0, -l); ctx.stroke(); ctx.rotate(-p); }
-    setInterval(updateClocks, 1000); updateClocks();
-</script>
+    </script>
 </body>
 </html>
