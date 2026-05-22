@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIB Gameboard | 16x32 Grid Matrix</title>
+    <style>
+        :root {
+            --matrix-purple: #4a154b;
+            --matrix-dark: #1a051d;
+            --matrix-glow: #bc13fe;
+            --drafting-blue: #0056b3;
+            --panel-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR - CONTROLS & COMPASS */
+        aside {
+            width: 320px;
+            background-color: #e9ecef;
+            border-right: 2px solid #ccc;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .panel-section {
+            background: var(--panel-bg);
+            padding: 15px;
+            border: 1px solid #bbb;
+            box-shadow: 3px 3px 0px #ccc;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            color: var(--matrix-purple);
+        }
+
+        /* NORTH VECTOR COMPASS */
+        .compass-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .north-vector {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--matrix-purple);
+            animation: pulse 2s infinite;
+        }
+        .arrow-up {
+            width: 0; 
+            height: 0; 
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 15px solid var(--matrix-purple);
+            margin-bottom: 5px;
+        }
+
+        /* MATRIX INTERACTION LEGENDBOX */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            margin-right: 10px;
+            border: 1px solid #333;
+        }
+
+        /* MAIN GAMEBOARD DECK */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--matrix-dark);
+            position: relative;
+        }
+
+        .gameboard-container {
+            height: 85vh;
+            aspect-ratio: 16 / 32;
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            grid-template-rows: repeat(32, 1fr);
+            gap: 2px;
+            background-color: #2a0830;
+            padding: 4px;
+            border: 3px double var(--matrix-glow);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
+        }
+
+        .matrix-cell {
+            background-color: rgba(74, 21, 75, 0.3);
+            border: 1px solid rgba(188, 19, 254, 0.2);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .matrix-cell:hover {
+            background-color: rgba(188, 19, 254, 0.5);
+            box-shadow: 0 0 8px var(--matrix-glow);
+        }
+
+        /* CELL STATES */
+        .matrix-cell.occupied {
+            background-color: var(--matrix-glow);
+            border-color: #fff;
+            box-shadow: 0 0 10px var(--matrix-glow);
+        }
+
+        .matrix-cell.scouted {
+            background-color: #0056b3;
+            border-color: #00ecff;
+        }
+
+        /* COORDINATE LABELS */
+        .matrix-cell::after {
+            content: attr(data-coord);
+            position: absolute;
+            font-size: 0.45rem;
+            color: rgba(255, 255, 255, 0.4);
+            bottom: 1px;
+            right: 1px;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div>
+            <div class="panel-section">
+                <div class="panel-title">Orientation</div>
+                <div class="compass-container">
+                    <div class="arrow-up"></div>
+                    <div class="north-vector">▲ N</div>
+                    <span style="font-size:0.7rem; color:#666; margin-top:5px;">OR / PNW Sector</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">WIB Matrix Specs</div>
+                <table style="width:100%; font-size:0.75rem; border-collapse:collapse;">
+                    <tr><td style="font-weight:bold;">X-Axis width:</td><td style="text-align:right;">16 Units (Time/Stints)</td></tr>
+                    <tr><td style="font-weight:bold;">Y-Axis height:</td><td style="text-align:right;">32 Units (Latitudes)</td></tr>
+                    <tr><td style="font-weight:bold;">Total Nodes:</td><td style="text-align:right;">512 Coordinates</td></tr>
+                </table>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Legend Modifiers</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--matrix-glow);"></div>
+                    <span>Active Deployment Node</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--drafting-blue);"></div>
+                    <span>Scouted Supply/Work Node</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(74, 21, 75, 0.3);"></div>
+                    <span>Unoccupied Clear Terrain</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-section" style="margin-bottom:0;">
+            <div class="panel-title">Current Coordinates</div>
+            <div id="coord-readout" style="font-size:1.1rem; font-weight:bold; text-align:center; color:var(--drafting-blue);">
+                X:-- Y:--
+            </div>
+            <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0; text-align:center;">
+                Click grid intersections to plot rotation paths.
+            </p>
+        </div>
+    </aside>
+
+    <main>
+        <div class="gameboard-container" id="matrix-board">
+            </div>
+    </main>
+
+    <script>
+        const board = document.getElementById('matrix-board');
+        const readout = document.getElementById('coord-readout');
+
+        // Build 16x32 Matrix (32 rows down, 16 cols across)
+        // Y-axis 32 down to 1 (North at top means highest Y value on top row)
+        for (let y = 32; y >= 1; y--) {
+            for (let x = 1; x <= 16; x++) {
+                const cell = document.createElement('div');
+                cell.classList.add('matrix-cell');
+                
+                // Format matching engineering coordinates: X01-Y32
+                const xStr = x.toString().padStart(2, '0');
+                const yStr = y.toString().padStart(2, '0');
+                cell.setAttribute('data-coord', `${xStr},${yStr}`);
+                cell.setAttribute('data-x', xStr);
+                cell.setAttribute('data-y', yStr);
+
+                // Tracking Hover States
+                cell.addEventListener('mouseenter', () => {
+                    readout.innerText = `X:${xStr} | Y:${yStr}`;
+                });
+
+                // Interaction: Left click switches states (Clear -> Occupied -> Scouted -> Clear)
+                cell.addEventListener('click', () => {
+                    if (!cell.classList.contains('occupied') && !cell.classList.contains('scouted')) {
+                        cell.classList.add('occupied');
+                    } else if (cell.classList.contains('occupied')) {
+                        cell.classList.remove('occupied');
+                        cell.classList.add('scouted');
+                    } else {
+                        cell.classList.remove('scouted');
+                    }
+                });
+
+                board.appendChild(cell);
+            }
+        }
+    </script>
+</body>
+</html>
